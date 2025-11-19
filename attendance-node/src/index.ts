@@ -1,0 +1,62 @@
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+import express, {
+  type Request,
+  type Response,
+  type NextFunction,
+} from 'express';
+import path from 'path';
+import morgan from 'morgan';
+import userRoute from './routes/user-route.ts';
+import attendanceRoute from './routes/attendance-route.ts';
+import authRoute from './routes/auth-route.ts';
+import departmentRoute from './routes/department-route.ts';
+import fieldAttendanceRoute from './routes/field-attendance-route.ts';
+import { __dirname } from './utils/path.ts';
+
+const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.set('json spaces', 2);
+
+app.use(morgan('dev'));
+
+const allowedOrigins = ['http://localhost:5173'];
+
+const corsOptions = {
+  origin: (origin: string, callback: any) => {
+    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
+
+const PORT = 8000;
+
+app.use(cors(corsOptions));
+app.use(cookieParser());
+
+app.get('/api', (_req, res) => {
+  res.send('Hello from Typescript Express!');
+});
+
+app.listen(PORT, () => {
+  console.log(`Server listening at http://localhost:${PORT}`);
+});
+
+app.use('/api/auth', authRoute);
+app.use('/api/users', userRoute);
+app.use('/api/attendances', attendanceRoute);
+app.use('/api/departments', departmentRoute);
+app.use('/api/field-attendances', fieldAttendanceRoute);
+
+app.use('/images', express.static(path.join(__dirname, '../uploads')));
+
+app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
+  console.error(err);
+  res.status(500).json({ error: err.message || 'Internal Server Error' });
+});
