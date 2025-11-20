@@ -1,6 +1,6 @@
 type CreateAttendanceType = {
   userId: number;
-  date: Date;
+  date: string;
   time: string;
   location: { latitude: number; longitude: number };
   image: File;
@@ -8,7 +8,7 @@ type CreateAttendanceType = {
 
 type LeaveType = {
   userId: number;
-  date: Date;
+  date: string;
   type: string;
   time: string;
   remarks?: string;
@@ -26,8 +26,7 @@ export const checkIn = async ({
   const formData = new FormData();
   formData.append('userId', String(userId));
   formData.append(
-    'date',
-    date instanceof Date ? date.toISOString() : String(date),
+    'date', String(date),
   );
   formData.append('time', time!);
   formData.append(
@@ -56,7 +55,7 @@ export const fieldCheckIn = async ({
   formData.append('userId', String(userId));
   formData.append(
     'date',
-    date instanceof Date ? date.toISOString() : String(date),
+    String(date),
   );
   formData.append('time', time!);
   formData.append(
@@ -85,7 +84,7 @@ export const fieldCheckOut = async ({
   formData.append('userId', String(userId));
   formData.append(
     'date',
-    date instanceof Date ? date.toISOString() : String(date),
+    String(date),
   );
   formData.append('time', time!);
   formData.append(
@@ -114,7 +113,7 @@ export const checkOut = async ({
   formData.append('userId', String(userId));
   formData.append(
     'date',
-    date instanceof Date ? date.toISOString() : String(date),
+    String(date),
   );
   formData.append('time', time);
   formData.append(
@@ -144,7 +143,7 @@ export const submitLeave = async ({
     credentials: 'include',
     body: JSON.stringify({
       userId,
-      date: date instanceof Date ? date.toISOString() : String(date),
+      date,
       type,
       time,
       remarks,
@@ -166,7 +165,7 @@ export const submitEarlyLeave = async ({
     credentials: 'include',
     body: JSON.stringify({
       userId,
-      date: date instanceof Date ? date.toISOString() : String(date),
+      date,
       type,
       time,
       remarks,

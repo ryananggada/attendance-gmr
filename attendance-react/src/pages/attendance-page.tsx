@@ -46,7 +46,7 @@ export default function AttendancePage() {
     | 'Done'
     | 'Leave'
     | 'EarlyLeave'
-  >('Done');
+  >('CheckIn');
   const [openDialog, setOpenDialog] = useState(false);
   const { getLocation } = useGeolocation();
   const { cameraStatus, requestCamera, locationStatus, requestLocation } =
@@ -155,11 +155,14 @@ export default function AttendancePage() {
     });
     const coords = await getLocation();
 
+    const currentDate = new Date().toLocaleDateString('en-CA');
+    const currentTime = new Date().toLocaleTimeString('en-GB');
+
     if (attendanceType === 'CheckIn') {
       checkInMutation.mutate({
         userId: user!.id,
-        date: new Date(),
-        time: new Date().toLocaleTimeString('en-GB'),
+        date: currentDate,
+        time: currentTime,
         location: coords,
         image: file,
       });
@@ -168,8 +171,8 @@ export default function AttendancePage() {
     if (attendanceType === 'FieldCheckIn') {
       fieldCheckInMutation.mutate({
         userId: user!.id,
-        date: new Date(),
-        time: new Date().toLocaleTimeString('en-GB'),
+        date: currentDate,
+        time: currentTime,
         location: coords,
         image: file,
       });
@@ -178,8 +181,8 @@ export default function AttendancePage() {
     if (attendanceType === 'FieldCheckOut') {
       fieldCheckOutMutation.mutate({
         userId: user!.id,
-        date: new Date(),
-        time: new Date().toLocaleTimeString('en-GB'),
+        date: currentDate,
+        time: currentTime,
         location: coords,
         image: file,
       });
@@ -188,8 +191,8 @@ export default function AttendancePage() {
     if (attendanceType === 'CheckOut') {
       checkOutMutation.mutate({
         userId: user!.id,
-        date: new Date(),
-        time: new Date().toLocaleTimeString('en-GB'),
+        date: currentDate,
+        time: currentTime,
         location: coords,
         image: file,
       });
@@ -201,7 +204,7 @@ export default function AttendancePage() {
   const onLeaveSubmit = async () => {
     leaveMutation.mutate({
       userId: user!.id,
-      date: new Date(),
+      date: new Date().toLocaleDateString('en-CA'),
       type: leaveType,
       time: new Date().toLocaleTimeString('en-GB'),
       remarks: leaveRemarks,
@@ -213,9 +216,9 @@ export default function AttendancePage() {
   const onEarlyLeaveSubmit = async () => {
     earlyLeaveMutation.mutate({
       userId: user!.id,
-      date: new Date(),
+      date: new Date().toLocaleDateString('en-CA'),
       type: earlyLeaveType,
-      time: new Date().toLocaleDateString('en-GB'),
+      time: new Date().toLocaleTimeString('en-GB'),
       remarks: earlyLeaveRemarks,
     });
 
@@ -244,21 +247,24 @@ export default function AttendancePage() {
     const has = (t: string) =>
       events.some((e: { type: string }) => e.type === t);
 
-    if (has('CheckIn') && !has('FieldCheckIn')) {
-      return setAttendanceType('FieldCheckIn');
+    if (user.department.isField) {
+      if (has('CheckIn') && !has('FieldCheckIn')) {
+        return setAttendanceType('FieldCheckIn');
+      }
+
+      if (has('CheckIn') && has('FieldCheckIn') && !has('FieldCheckOut')) {
+        return setAttendanceType('FieldCheckOut');
+      }
+
+      if (has('CheckIn') && has('FieldCheckIn') && has('FieldCheckOut') && !has('CheckOut')) {
+        return setAttendanceType('CheckOut');
+      }
     }
 
-    if (has('CheckIn') && has('FieldCheckIn') && !has('FieldCheckOut')) {
-      return setAttendanceType('FieldCheckOut');
-    }
-
-    if (
-      has('CheckIn') &&
-      has('FieldCheckIn') &&
-      has('FieldCheckoOut') &&
-      !has('CheckOut')
-    ) {
-      return setAttendanceType('CheckOut');
+    if (!user.department.isField) {
+      if (has('CheckIn') && !has('CheckOut')) {
+        return setAttendanceType('CheckOut');
+      }
     }
 
     if (earlyLeave) {
