@@ -1,4 +1,5 @@
 import Camera from '@/components/camera';
+import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -33,26 +34,31 @@ import {
   submitLeave,
 } from '@/services/attendance-service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { AlertCircleIcon } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 
-export default function AttendancePage() {
-  const [capturedImage, setCapturedImage] = useState('');
-  const [attendanceType, setAttendanceType] = useState<
-    | 'CheckIn'
+type AttendanceType =  | 'CheckIn'
     | 'FieldCheckIn'
     | 'FieldCheckOut'
     | 'CheckOut'
     | 'Done'
     | 'Leave'
-    | 'EarlyLeave'
-  >('CheckIn');
-  const [openDialog, setOpenDialog] = useState(false);
+    | 'EarlyLeave';
+
+export default function AttendancePage() {
+  const [capturedImage, setCapturedImage] = useState('');
+  const [attendanceType, setAttendanceType] = useState<AttendanceType>('CheckIn');
   const { getLocation } = useGeolocation();
   const { cameraStatus, requestCamera, locationStatus, requestLocation } =
     usePermissions();
   const { user } = useAuth();
-  const date = new Date().toISOString().split('T')[0];
+  const date = format(new Date(), 'yyyy-MM-dd');
+
+  const [openDialog, setOpenDialog] = useState(false);
+  const [leaveDialog, setLeaveDialog] = useState(false);
+  const [earlyLeaveDialog, setEarlyLeaveDialog] = useState(false);
 
   const [leaveType, setLeaveType] = useState('');
   const [leaveRemarks, setLeaveRemarks] = useState('');
@@ -132,6 +138,7 @@ export default function AttendancePage() {
   const earlyLeaveMutation = useMutation({
     mutationFn: submitEarlyLeave,
     onSuccess: () => {
+      toast.success('Izin berhasil!');
       queryClient.invalidateQueries({
         queryKey: ['attendance', user!.id, date],
       });
@@ -141,6 +148,7 @@ export default function AttendancePage() {
   const leaveMutation = useMutation({
     mutationFn: submitLeave,
     onSuccess: () => {
+      toast.success('Tidak hadir berhasil!');
       queryClient.invalidateQueries({
         queryKey: ['attendance', user!.id, date],
       });
@@ -155,8 +163,8 @@ export default function AttendancePage() {
     });
     const coords = await getLocation();
 
-    const currentDate = new Date().toLocaleDateString('en-CA');
-    const currentTime = new Date().toLocaleTimeString('en-GB');
+    const currentDate = format(new Date(), 'yyyy-MM-dd');
+    const currentTime = format(new Date(), 'HH:mm:ss');
 
     if (attendanceType === 'CheckIn') {
       checkInMutation.mutate({
@@ -199,30 +207,31 @@ export default function AttendancePage() {
     }
 
     setCapturedImage('');
+    setOpenDialog(false);
   };
 
   const onLeaveSubmit = async () => {
     leaveMutation.mutate({
       userId: user!.id,
-      date: new Date().toLocaleDateString('en-CA'),
+      date: format(new Date(), 'yyyy-MM-dd'),
       type: leaveType,
-      time: new Date().toLocaleTimeString('en-GB'),
+      time: format(new Date(), 'HH:mm:ss'),
       remarks: leaveRemarks,
     });
 
-    setAttendanceType('Leave');
+    setLeaveDialog(false);
   };
 
   const onEarlyLeaveSubmit = async () => {
     earlyLeaveMutation.mutate({
       userId: user!.id,
-      date: new Date().toLocaleDateString('en-CA'),
+      date: format(new Date(), 'yyyy-MM-dd'),
       type: earlyLeaveType,
-      time: new Date().toLocaleTimeString('en-GB'),
+      time: format(new Date(), 'HH:mm:ss'),
       remarks: earlyLeaveRemarks,
     });
 
-    setAttendanceType('EarlyLeave');
+    setEarlyLeaveDialog(false);
   };
 
   useEffect(() => {
@@ -242,6 +251,10 @@ export default function AttendancePage() {
 
     if (leave) {
       return setAttendanceType('Leave');
+    }
+
+    if (earlyLeave) {
+      return setAttendanceType('EarlyLeave');
     }
 
     const has = (t: string) =>
@@ -267,15 +280,19 @@ export default function AttendancePage() {
       }
     }
 
-    if (earlyLeave) {
-      return setAttendanceType('EarlyLeave');
-    }
-
     return setAttendanceType('Done');
   }, [isFetched, attendance, events, leave, earlyLeave, user]);
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4">
+      {
+        (!(cameraStatus === 'granted' && locationStatus === 'granted') && 
+          <Alert variant='destructive'>
+            <AlertCircleIcon />
+            <AlertTitle>Mohon nyalain izin lokasi dan kamera di perangkat anda.</AlertTitle>
+          </Alert>)
+      }
+
       <div className="grid md:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
@@ -440,9 +457,7 @@ export default function AttendancePage() {
             className="mx-auto min-w-[156px]"
             disabled={
               !(cameraStatus === 'granted' && locationStatus === 'granted') ||
-              attendanceType === 'Done' ||
-              attendanceType === 'Leave' ||
-              attendanceType === 'EarlyLeave'
+              ['Done', 'Leave', 'EarlyLeave'].includes(attendanceType)
             }
           >
             Absen
@@ -461,7 +476,9 @@ export default function AttendancePage() {
 
       {attendanceType === 'CheckIn' && (
         <div className="mx-auto">
-          <Dialog>
+          <Dialog
+            open={leaveDialog}
+            onOpenChange={setLeaveDialog}>
             <DialogTrigger asChild>
               <Button variant="destructive" className="min-w-[156px]">
                 Tidak hadir
@@ -501,11 +518,11 @@ export default function AttendancePage() {
         </div>
       )}
 
-      {attendanceType !== 'CheckIn' && attendanceType !== 'Done' && (
+      {attendanceType !== 'CheckIn' && (
         <div className="mx-auto">
-          <Dialog>
+          <Dialog open={earlyLeaveDialog} onOpenChange={setEarlyLeaveDialog}>
             <DialogTrigger asChild>
-              <Button variant="secondary" className="min-w-[156px]">
+              <Button disabled={['EarlyLeave', 'Done'].includes(attendanceType)} variant="secondary" className="min-w-[156px]">
                 Izin
               </Button>
             </DialogTrigger>

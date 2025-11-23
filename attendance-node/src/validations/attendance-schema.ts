@@ -39,3 +39,21 @@ export const leaveSchema = z.object({
     ),
   remarks: z.string().optional(),
 });
+
+export const earlyLeaveSchema = z.object({
+  userId: z.coerce.number('User ID is required.'),
+  date: z
+    .string('Date is required.')
+    .refine(
+      (val) => /^\d{4}-\d{2}-\d{2}$/.test(val),
+      'Date must be in format YYYY-MM-DD.',
+    ),
+  type: z.enum(['Time', 'Early']),
+  time: z
+    .string('Time is required.')
+    .refine(
+      (val) => /^([01]\d|2[0-3]):([0-5]\d):([0-5]\d)$/.test(val),
+      'Time must be in format HH:mm:ss.',
+    ),
+  remarks: z.string().optional(),
+});

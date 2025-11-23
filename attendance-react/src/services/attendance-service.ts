@@ -1,3 +1,5 @@
+import { toast } from "sonner";
+
 type CreateAttendanceType = {
   userId: number;
   date: string;
@@ -141,6 +143,9 @@ export const submitLeave = async ({
   const response = await fetch(`${baseUrl}/leave`, {
     method: 'POST',
     credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify({
       userId,
       date,
@@ -160,9 +165,12 @@ export const submitEarlyLeave = async ({
   time,
   remarks,
 }: LeaveType) => {
-  const response = await fetch(`${baseUrl}/leave`, {
+  const response = await fetch(`${baseUrl}/early-leave`, {
     method: 'POST',
     credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json'
+    },
     body: JSON.stringify({
       userId,
       date,
@@ -172,7 +180,9 @@ export const submitEarlyLeave = async ({
     }),
   });
 
-  return response.json();
+  if (!response.ok) {
+    toast.error(response.data.error);
+  }
 };
 
 export const getSingleAttendance = async (userId: number, date: string) => {

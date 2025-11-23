@@ -7,12 +7,14 @@ import {
   submitLeave,
   getAttendances,
   getSingleAttendance,
+  submitEarlyLeave,
 } from '../controllers/attendance-controller.ts';
 import { upload } from '../middlewares/multer.ts';
 import { validate } from '../middlewares/validate.ts';
 import {
   createAttendanceSchema,
   leaveSchema,
+  earlyLeaveSchema,
 } from '../validations/attendance-schema.ts';
 
 const router = express.Router();
@@ -43,6 +45,7 @@ router.post(
   checkOut,
 );
 router.post('/leave', validate(leaveSchema), submitLeave);
+router.post('/early-leave', validate(earlyLeaveSchema), submitEarlyLeave);
 router.get('/user/:userId', getSingleAttendance);
 
 export default router;

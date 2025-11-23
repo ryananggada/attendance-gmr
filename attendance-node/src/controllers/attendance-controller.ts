@@ -216,9 +216,6 @@ export const getAttendances = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid day format (YYYY-MM-DD)' });
     }
 
-    /*const targetDate = new Date(day);
-    const formattedDate = targetDate.toISOString().split('T')[0];
-    */
     rows = await db
       .select()
       .from(attendance)
