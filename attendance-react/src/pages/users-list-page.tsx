@@ -23,7 +23,7 @@ export default function UsersListPage() {
   const { data: users } = useQuery({ queryKey: ['users'], queryFn: getUsers });
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4">
+    <div className="flex flex-1 flex-col gap-4">
       <Button asChild className="max-w-[200px]">
         <Link to="/users/create">Tambah User</Link>
       </Button>

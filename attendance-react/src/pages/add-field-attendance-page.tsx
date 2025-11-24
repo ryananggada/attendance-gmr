@@ -1,12 +1,10 @@
 import { Button } from '@/components/ui/button';
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/auth-context';
@@ -16,7 +14,7 @@ import { createFieldAttendance } from '@/services/field-attendance-service';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import z from 'zod';
 
@@ -79,11 +77,8 @@ export default function AddFieldAttendancePage() {
   }, [locationStatus]);
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-1 flex-col gap-4 p-4"
-      >
+    <form onSubmit={form.handleSubmit(onSubmit)}>
+      <FieldGroup>
         {form.watch('image') ? (
           <img
             src={URL.createObjectURL(form.watch('image'))}
@@ -98,72 +93,76 @@ export default function AddFieldAttendancePage() {
           />
         )}
 
-        <FormField
-          control={form.control}
+        <Controller
           name="image"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Gambar</FormLabel>
-              <FormControl>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => {
-                    const file = e.target.files?.[0] || null;
-                    field.onChange(file);
-                  }}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Gambar</FieldLabel>
+              <Input
+                id={field.name}
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0] || null;
+                  field.onChange(file);
+                }}
+                aria-invalid={fieldState.invalid}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
           )}
         />
 
-        <FormField
-          control={form.control}
+        <Controller
           name="customer"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Customer</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
+          control={form.control}
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Customer</FieldLabel>
+              <Input
+                {...field}
+                id={field.name}
+                aria-invalid={fieldState.invalid}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
           )}
         />
 
-        <FormField
-          control={form.control}
+        <Controller
           name="personInCharge"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Person in Charge</FormLabel>
-              <FormControl>
-                <Input {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
           control={form.control}
-          name="remarks"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Keterangan</FormLabel>
-              <FormControl>
-                <Textarea className="resize-none" {...field} />
-              </FormControl>
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Person in Charge</FieldLabel>
+              <Input
+                {...field}
+                id={field.name}
+                aria-invalid={fieldState.invalid}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
           )}
         />
 
-        <Button type="submit" className="max-w-[256px]">
-          Tambah Lapangan
-        </Button>
-      </form>
-    </Form>
+        <Controller
+          name="remarks"
+          control={form.control}
+          render={({ field }) => (
+            <Field>
+              <FieldLabel htmlFor={field.name}>Keterangan</FieldLabel>
+              <Textarea id={field.name} className="resize-none" {...field} />
+            </Field>
+          )}
+        />
+
+        <Field orientation="horizontal">
+          <Button type="submit" className="max-w-[256px]">
+            Tambah Lapangan
+          </Button>
+        </Field>
+      </FieldGroup>
+    </form>
   );
 }

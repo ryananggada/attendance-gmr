@@ -1,12 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-} from '@/components/ui/form';
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import {
   getDepartmentById,
@@ -14,7 +13,7 @@ import {
 } from '@/services/department-service';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
-import { useForm } from 'react-hook-form';
+import { Controller, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
 
 export default function EditDepartmentPage() {
@@ -50,45 +49,47 @@ export default function EditDepartmentPage() {
   }, [department, form]);
 
   return (
-    <Form {...form}>
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-1 flex-col gap-4 p-4"
-      >
-        <FormField
-          control={form.control}
+    <form onSubmit={form.handleSubmit(onSubmit)}>
+      <FieldGroup>
+        <Controller
           name="name"
-          render={({ field }) => (
-            <FormItem className="flex items-center">
-              <FormLabel className="mr-2">Nama</FormLabel>
-              <FormControl>
-                <Input className="max-w-56" {...field} />
-              </FormControl>
-            </FormItem>
-          )}
-        />
-
-        <FormField
           control={form.control}
-          name="isField"
-          render={({ field }) => (
-            <FormItem className="flex items-center">
-              <FormControl>
-                <Checkbox
-                  id="isField"
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <FormLabel htmlFor="isField" className="text-sm font-normal">
-                Lapangan
-              </FormLabel>
-            </FormItem>
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Nama</FieldLabel>
+              <Input
+                {...field}
+                className="max-w-72"
+                id={field.name}
+                aria-invalid={fieldState.invalid}
+              />
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+            </Field>
           )}
         />
 
-        <Button type="submit">Edit</Button>
-      </form>
-    </Form>
+        <Controller
+          name="isField"
+          control={form.control}
+          render={({ field }) => (
+            <Field orientation="horizontal">
+              <Checkbox
+                id={field.name}
+                checked={field.value}
+                onCheckedChange={field.onChange}
+              />
+
+              <FieldLabel htmlFor={field.name} className="text-sm font-normal">
+                Lapangan
+              </FieldLabel>
+            </Field>
+          )}
+        />
+
+        <Field orientation="horizontal">
+          <Button type="submit">Edit</Button>
+        </Field>
+      </FieldGroup>
+    </form>
   );
 }

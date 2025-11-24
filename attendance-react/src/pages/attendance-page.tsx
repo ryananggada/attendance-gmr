@@ -39,17 +39,19 @@ import { AlertCircleIcon } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 
-type AttendanceType =  | 'CheckIn'
-    | 'FieldCheckIn'
-    | 'FieldCheckOut'
-    | 'CheckOut'
-    | 'Done'
-    | 'Leave'
-    | 'EarlyLeave';
+type AttendanceType =
+  | 'CheckIn'
+  | 'FieldCheckIn'
+  | 'FieldCheckOut'
+  | 'CheckOut'
+  | 'Done'
+  | 'Leave'
+  | 'EarlyLeave';
 
 export default function AttendancePage() {
   const [capturedImage, setCapturedImage] = useState('');
-  const [attendanceType, setAttendanceType] = useState<AttendanceType>('CheckIn');
+  const [attendanceType, setAttendanceType] =
+    useState<AttendanceType>('CheckIn');
   const { getLocation } = useGeolocation();
   const { cameraStatus, requestCamera, locationStatus, requestLocation } =
     usePermissions();
@@ -269,7 +271,12 @@ export default function AttendancePage() {
         return setAttendanceType('FieldCheckOut');
       }
 
-      if (has('CheckIn') && has('FieldCheckIn') && has('FieldCheckOut') && !has('CheckOut')) {
+      if (
+        has('CheckIn') &&
+        has('FieldCheckIn') &&
+        has('FieldCheckOut') &&
+        !has('CheckOut')
+      ) {
         return setAttendanceType('CheckOut');
       }
     }
@@ -284,14 +291,15 @@ export default function AttendancePage() {
   }, [isFetched, attendance, events, leave, earlyLeave, user]);
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4">
-      {
-        (!(cameraStatus === 'granted' && locationStatus === 'granted') && 
-          <Alert variant='destructive'>
-            <AlertCircleIcon />
-            <AlertTitle>Mohon nyalain izin lokasi dan kamera di perangkat anda.</AlertTitle>
-          </Alert>)
-      }
+    <div className="flex flex-1 flex-col gap-4">
+      {!(cameraStatus === 'granted' && locationStatus === 'granted') && (
+        <Alert variant="destructive">
+          <AlertCircleIcon />
+          <AlertTitle>
+            Mohon nyalain izin lokasi dan kamera di perangkat anda.
+          </AlertTitle>
+        </Alert>
+      )}
 
       <div className="grid md:grid-cols-2 gap-4">
         <Card>
@@ -476,9 +484,7 @@ export default function AttendancePage() {
 
       {attendanceType === 'CheckIn' && (
         <div className="mx-auto">
-          <Dialog
-            open={leaveDialog}
-            onOpenChange={setLeaveDialog}>
+          <Dialog open={leaveDialog} onOpenChange={setLeaveDialog}>
             <DialogTrigger asChild>
               <Button variant="destructive" className="min-w-[156px]">
                 Tidak hadir
@@ -522,7 +528,11 @@ export default function AttendancePage() {
         <div className="mx-auto">
           <Dialog open={earlyLeaveDialog} onOpenChange={setEarlyLeaveDialog}>
             <DialogTrigger asChild>
-              <Button disabled={['EarlyLeave', 'Done'].includes(attendanceType)} variant="secondary" className="min-w-[156px]">
+              <Button
+                disabled={['EarlyLeave', 'Done'].includes(attendanceType)}
+                variant="secondary"
+                className="min-w-[156px]"
+              >
                 Izin
               </Button>
             </DialogTrigger>

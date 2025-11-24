@@ -18,7 +18,7 @@ export default function DepartmentsListPage() {
   });
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4">
+    <div className="flex flex-1 flex-col gap-4">
       <Button asChild className="max-w-[200px]">
         <Link to="/departments/create">Tambah Department</Link>
       </Button>

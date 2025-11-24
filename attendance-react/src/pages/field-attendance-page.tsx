@@ -21,7 +21,7 @@ export default function FieldAttendancePage() {
   });
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4">
+    <div className="flex flex-1 flex-col gap-4">
       <Button asChild className="mx-auto min-w-[256px]">
         <Link to="/field-attendance/create">Tambah Absen Lapangan</Link>
       </Button>
