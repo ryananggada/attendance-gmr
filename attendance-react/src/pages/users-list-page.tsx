@@ -1,23 +1,58 @@
 import { Button } from '@/components/ui/button';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { DataTable } from '@/components/ui/data-table';
 import { getUsers } from '@/services/user-service';
 import { useQuery } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { Link } from 'react-router';
+
+type User = {
+  user: {
+    id: number;
+    username: string;
+    fullName: string;
+    role: string;
+  };
+  department: { name: string };
+};
+
+const columns: ColumnDef<User>[] = [
+  {
+    accessorFn: (row) => row.user.username,
+    id: 'username',
+    header: 'Username',
+  },
+  {
+    accessorFn: (row) => row.user.fullName,
+    id: 'fullName',
+    header: 'Full Name',
+  },
+  {
+    accessorFn: (row) => row.department.name,
+    id: 'departmentName',
+    header: 'Department',
+  },
+  {
+    accessorFn: (row) => row.user.role,
+    id: 'role',
+    header: 'Role',
+  },
+  {
+    accessorFn: (row) => row.user.id,
+    id: 'userId',
+    header: () => <div className="text-right">Actions</div>,
+    cell: ({ row }) => {
+      const userId = row.getValue('userId');
+
+      return (
+        <div className="text-right">
+          <Button asChild>
+            <Link to={`/users/${userId}/edit`}>Ubah</Link>
+          </Button>
+        </div>
+      );
+    },
+  },
+];
 
 export default function UsersListPage() {
   const { data: users } = useQuery({ queryKey: ['users'], queryFn: getUsers });
@@ -28,66 +63,7 @@ export default function UsersListPage() {
         <Link to="/users/create">Tambah User</Link>
       </Button>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Username</TableHead>
-            <TableHead>Full Name</TableHead>
-            <TableHead>Department</TableHead>
-            <TableHead>Role</TableHead>
-            <TableHead className="text-right">Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-
-        <TableBody>
-          {users &&
-            users.map(
-              (item: {
-                user: {
-                  id: number;
-                  username: string;
-                  fullName: string;
-                  role: string;
-                };
-                department: { name: string };
-              }) => (
-                <TableRow key={item.user.id}>
-                  <TableCell className="font-medium">
-                    {item.user.username}
-                  </TableCell>
-                  <TableCell>{item.user.fullName}</TableCell>
-                  <TableCell>{item.department.name}</TableCell>
-                  <TableCell>{item.user.role}</TableCell>
-                  <TableCell className="text-right">
-                    <Button asChild>
-                      <Link to={`/users/${item.user.id}/edit`}>Ubah</Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ),
-            )}
-        </TableBody>
-      </Table>
-
-      <Pagination>
-        <PaginationContent>
-          <PaginationItem>
-            <PaginationPrevious />
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationLink isActive>1</PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationLink>2</PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationLink>3</PaginationLink>
-          </PaginationItem>
-          <PaginationItem>
-            <PaginationNext />
-          </PaginationItem>
-        </PaginationContent>
-      </Pagination>
+      <DataTable columns={columns} data={users ?? []} />
     </div>
   );
 }

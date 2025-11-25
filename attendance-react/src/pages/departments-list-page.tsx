@@ -1,15 +1,46 @@
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { DataTable } from '@/components/ui/data-table';
 import { getDepartments } from '@/services/department-service';
 import { useQuery } from '@tanstack/react-query';
+import type { ColumnDef } from '@tanstack/react-table';
 import { Link } from 'react-router';
+
+type Department = {
+  id: number;
+  name: string;
+  isField: boolean;
+};
+
+const columns: ColumnDef<Department>[] = [
+  {
+    accessorKey: 'name',
+    header: 'Nama',
+  },
+  {
+    accessorKey: 'isField',
+    header: 'Ada Lapangan?',
+    cell: ({ row }) => {
+      const isField = row.getValue('isField');
+
+      return isField ? <>Iya</> : <>Tidak</>;
+    },
+  },
+  {
+    accessorKey: 'id',
+    header: () => <div className="text-right">Actions</div>,
+    cell: ({ row }) => {
+      const departmentId = row.getValue('id');
+
+      return (
+        <div className="text-right">
+          <Button asChild>
+            <Link to={`/departments/${departmentId}/edit`}>Edit</Link>
+          </Button>
+        </div>
+      );
+    },
+  },
+];
 
 export default function DepartmentsListPage() {
   const { data: departments } = useQuery({
@@ -23,33 +54,7 @@ export default function DepartmentsListPage() {
         <Link to="/departments/create">Tambah Department</Link>
       </Button>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Name</TableHead>
-            <TableHead>Ada Lapangan?</TableHead>
-            <TableHead>Actions</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {departments &&
-            departments.map(
-              (department: { id: number; name: string; isField: boolean }) => (
-                <TableRow key={department.id}>
-                  <TableCell>{department.name}</TableCell>
-                  <TableCell>{department.isField ? 'Iya' : 'Tidak'}</TableCell>
-                  <TableCell>
-                    <Button asChild>
-                      <Link to={`/departments/${department.id}/edit`}>
-                        Edit
-                      </Link>
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ),
-            )}
-        </TableBody>
-      </Table>
+      <DataTable columns={columns} data={departments ?? []} />
     </div>
   );
 }

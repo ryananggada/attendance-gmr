@@ -64,10 +64,7 @@ export default function EditUserPage() {
 
       <h2 className="text-2xl font-bold">Ubah Password</h2>
 
-      <form
-        onSubmit={form.handleSubmit(onSubmit)}
-        className="flex flex-col gap-4"
-      >
+      <form onSubmit={form.handleSubmit(onSubmit)}>
         <FieldGroup>
           <Controller
             name="password"

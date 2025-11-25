@@ -1,16 +1,68 @@
 import { Button } from '@/components/ui/button';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
 import { useAuth } from '@/contexts/auth-context';
 import { getFieldAttendances } from '@/services/field-attendance-service';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router';
+import type { ColumnDef } from '@tanstack/react-table';
+import { DataTable } from '@/components/ui/data-table';
+
+type FieldAttendance = {
+  id: number;
+  time: string;
+  customer: string;
+  personInCharge: string;
+  remarks: string;
+  image: string;
+};
+
+const columns: ColumnDef<FieldAttendance>[] = [
+  {
+    accessorKey: 'time',
+    header: 'Waktu',
+  },
+  {
+    accessorKey: 'customer',
+    header: 'Customer',
+  },
+  {
+    accessorKey: 'personInCharge',
+    header: 'Person in Change',
+  },
+  {
+    accessorKey: 'remarks',
+    header: 'Keterangan',
+    cell: ({ row }) => {
+      const remarks = row.getValue('remarks');
+
+      return remarks ?? '-';
+    },
+  },
+  {
+    accessorKey: 'image',
+    header: 'Gambar',
+    cell: ({ row }) => {
+      const image = row.getValue('image');
+
+      return (
+        <>
+          {image ? (
+            <img
+              src={`${import.meta.env.VITE_IMAGE_URL}/${image}`}
+              alt="Image"
+              className="mt-2 w-36 h-36 object-cover rounded-md"
+            />
+          ) : (
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png"
+              alt="No image"
+              className="mt-2 w-36 h-36 object-cover rounded-md"
+            />
+          )}
+        </>
+      );
+    },
+  },
+];
 
 export default function FieldAttendancePage() {
   const { user } = useAuth();
@@ -26,55 +78,7 @@ export default function FieldAttendancePage() {
         <Link to="/field-attendance/create">Tambah Absen Lapangan</Link>
       </Button>
 
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Waktu</TableHead>
-            <TableHead>Customer</TableHead>
-            <TableHead>Person in Charge</TableHead>
-            <TableHead>Keterangan</TableHead>
-            <TableHead>Gambar</TableHead>
-          </TableRow>
-        </TableHeader>
-
-        <TableBody>
-          {fieldAttendances &&
-            fieldAttendances.map(
-              (fieldAttendance: {
-                id: number;
-                time: string;
-                customer: string;
-                personInCharge: string;
-                remarks: string;
-                image: string;
-              }) => (
-                <TableRow key={fieldAttendance.id}>
-                  <TableCell>{fieldAttendance.time}</TableCell>
-                  <TableCell>{fieldAttendance.customer}</TableCell>
-                  <TableCell>{fieldAttendance.personInCharge}</TableCell>
-                  <TableCell>{fieldAttendance.remarks}</TableCell>
-                  <TableCell>
-                    {fieldAttendance.image ? (
-                      <img
-                        src={`${import.meta.env.VITE_IMAGE_URL}/${
-                          fieldAttendance.image
-                        }`}
-                        alt="Image"
-                        className="mt-2 w-36 h-36 object-cover rounded-md"
-                      />
-                    ) : (
-                      <img
-                        src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png"
-                        alt="No image"
-                        className="mt-2 w-36 h-36 object-cover rounded-md"
-                      />
-                    )}
-                  </TableCell>
-                </TableRow>
-              ),
-            )}
-        </TableBody>
-      </Table>
+      <DataTable columns={columns} data={fieldAttendances ?? []} />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { toast } from "sonner";
+import { toast } from 'sonner';
 
 type CreateAttendanceType = {
   userId: number;
@@ -27,9 +27,7 @@ export const checkIn = async ({
 }: CreateAttendanceType) => {
   const formData = new FormData();
   formData.append('userId', String(userId));
-  formData.append(
-    'date', String(date),
-  );
+  formData.append('date', String(date));
   formData.append('time', time!);
   formData.append(
     'location',
@@ -55,10 +53,7 @@ export const fieldCheckIn = async ({
 }: CreateAttendanceType) => {
   const formData = new FormData();
   formData.append('userId', String(userId));
-  formData.append(
-    'date',
-    String(date),
-  );
+  formData.append('date', String(date));
   formData.append('time', time!);
   formData.append(
     'location',
@@ -84,10 +79,7 @@ export const fieldCheckOut = async ({
 }: CreateAttendanceType) => {
   const formData = new FormData();
   formData.append('userId', String(userId));
-  formData.append(
-    'date',
-    String(date),
-  );
+  formData.append('date', String(date));
   formData.append('time', time!);
   formData.append(
     'location',
@@ -113,10 +105,7 @@ export const checkOut = async ({
 }: CreateAttendanceType) => {
   const formData = new FormData();
   formData.append('userId', String(userId));
-  formData.append(
-    'date',
-    String(date),
-  );
+  formData.append('date', String(date));
   formData.append('time', time);
   formData.append(
     'location',
@@ -144,7 +133,7 @@ export const submitLeave = async ({
     method: 'POST',
     credentials: 'include',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       userId,
@@ -169,7 +158,7 @@ export const submitEarlyLeave = async ({
     method: 'POST',
     credentials: 'include',
     headers: {
-      'Content-Type': 'application/json'
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       userId,

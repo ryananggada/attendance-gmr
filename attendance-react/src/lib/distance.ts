@@ -1,14 +1,14 @@
-export function haversineDistance(lat: number, lon: number) {
+export function haversineDistance(lat: number, long: number) {
   const R = 6371e3;
   const toRad = (deg: number) => (deg * Math.PI) / 180;
 
   const latEnv = Number(import.meta.env.VITE_LAT);
-  const lonEnv = Number(import.meta.env.VITE_LONG);
+  const longEnv = Number(import.meta.env.VITE_LONG);
 
   const φ1 = toRad(latEnv);
   const φ2 = toRad(lat);
   const Δφ = toRad(lat - latEnv);
-  const Δλ = toRad(lon - lonEnv);
+  const Δλ = toRad(long - longEnv);
 
   const a =
     Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +

@@ -1,78 +1,65 @@
 import { Datepicker } from '@/components/date-picker';
 import { MonthYearPicker } from '@/components/month-year-picker';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
+import { DataTable } from '@/components/ui/data-table';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useReverseGeocode } from '@/hooks/use-reverse-geocode';
 import { haversineDistance } from '@/lib/distance';
 import { getAttendances } from '@/services/attendance-service';
-import { useQuery } from '@tanstack/react-query';
+import { reverseGeocode } from '@/services/geolocation-service';
+import { useQueries, useQuery } from '@tanstack/react-query';
+import { type ColumnDef } from '@tanstack/react-table';
 import { useMemo, useState } from 'react';
 
-function AttendanceRow({
-  a,
-  activeTypeTab,
-  activeDateTab,
-}: {
-  a: any;
-  activeTypeTab: string;
-  activeDateTab: string;
-}) {
-  const events = Array.isArray(a.checkEvent) ? a.checkEvent : [];
-  const event = events.find((ev) => ev.type === activeTypeTab) ?? null;
+type AttendanceRowData = {
+  user: { fullName: string };
+  attendance: {
+    id: number;
+    date: string;
+  };
+  checkEvent: [
+    { type: string; time: string; location: [number, number]; image: string },
+  ];
+};
 
-  const date = new Date(a.attendance.date).toLocaleDateString('id-ID');
-  const time = event?.time;
-  const location = event?.location;
-  const image = event?.image;
+function useAttendanceRows(
+  filteredAttendances: AttendanceRowData[],
+  activeTypeTab: string,
+) {
+  const baseRows = useMemo(() => {
+    return filteredAttendances.map((a) => {
+      const events = Array.isArray(a.checkEvent) ? a.checkEvent : [];
+      const event = events.find((ev) => ev.type === activeTypeTab);
 
-  const imageSrc = image
-    ? `${import.meta.env.VITE_IMAGE_URL}/${image}`
-    : 'https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png';
+      const location = event?.location;
 
-  const shouldReverseGeocode = activeTypeTab.includes('Field') && !!location;
-  const { data: locationName, isLoading } = useReverseGeocode(
-    shouldReverseGeocode ? location?.[0] ?? null : null,
-    shouldReverseGeocode ? location?.[1] ?? null : null,
-  );
+      return {
+        id: a.attendance.id,
+        name: a.user?.fullName ?? 'Unknown',
+        date: new Date(a.attendance.date).toLocaleDateString('id-ID'),
+        time: event?.time ?? '-',
+        location,
+        distance: location
+          ? haversineDistance(location[0], location[1]).toFixed(0)
+          : '-',
+        image: event?.image
+          ? `${import.meta.env.VITE_IMAGE_URL}/${event.image}`
+          : 'https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png',
+      };
+    });
+  }, [filteredAttendances, activeTypeTab]);
 
-  return (
-    <TableRow key={a.attendance.id}>
-      <TableCell>{a.user?.fullName ?? 'Unknown'}</TableCell>
-      {activeDateTab === 'month' && <TableCell>{date}</TableCell>}
-      <TableCell>{time}</TableCell>
-      <TableCell className="whitespace-normal break-words max-w-sm">
-        {location ? (
-          activeTypeTab.includes('Field') ? (
-            isLoading ? (
-              <span className="text-gray-400 italic">Memuat...</span>
-            ) : (
-              locationName || 'Gagal memuat lokasi'
-            )
-          ) : (
-            `${haversineDistance(location[0], location[1]).toFixed(
-              0,
-            )} m dari kantor`
-          )
-        ) : (
-          '-'
-        )}
-      </TableCell>
-      <TableCell>
-        <img
-          src={imageSrc}
-          alt="Attendance"
-          className="mt-2 w-36 h-36 object-cover rounded-md"
-        />
-      </TableCell>
-    </TableRow>
-  );
+  const geocodeQueries = useQueries({
+    queries: baseRows.map((row) => ({
+      queryKey: ['reverse-geocode', row.location],
+      queryFn: () =>
+        row.location ? reverseGeocode(row.location[0], row.location[1]) : null,
+      enabled: !!row.location,
+    })),
+  });
+
+  return baseRows.map((row, idx) => ({
+    ...row,
+    locationName: geocodeQueries[idx]?.data ?? '-',
+  }));
 }
 
 export default function AttendanceSummaryPage() {
@@ -84,7 +71,9 @@ export default function AttendanceSummaryPage() {
 
   const [activeDateTab, setActiveDateTab] = useState<'day' | 'month'>('day');
 
-  const [activeTypeTab, setActiveTypeTab] = useState('CheckIn');
+  const [activeTypeTab, setActiveTypeTab] = useState<
+    'CheckIn' | 'FieldCheckIn' | 'FieldCheckOut' | 'CheckOut'
+  >('CheckIn');
 
   const { data: attendances } = useQuery({
     queryKey: ['attendances', date, monthDate, activeDateTab],
@@ -97,19 +86,68 @@ export default function AttendanceSummaryPage() {
       ),
   });
 
+  const columns = useMemo<ColumnDef<AttendanceRowData>[]>(() => {
+    const base = [
+      {
+        accessorKey: 'name',
+        header: 'Nama',
+      },
+      {
+        accessorKey: 'time',
+        header: 'Waktu',
+      },
+    ];
+
+    if (activeDateTab === 'month') {
+      base.splice(1, 0, {
+        accessorKey: 'date',
+        header: 'Tanggal',
+      });
+    }
+
+    base.push(
+      activeTypeTab.includes('Field')
+        ? { accessorKey: 'locationName', header: 'Lokasi' }
+        : { accessorKey: 'distance', header: 'Jarak dari Kantor (m)' },
+    );
+
+    base.push({
+      accessorKey: 'image',
+      header: 'Foto',
+      cell: ({ row }) => {
+        const image = row.getValue('image');
+
+        return (
+          <img
+            src={`${import.meta.env.VITE_IMAGE_URL}/${image}`}
+            alt="Image"
+            className="mt-2 w-36 h-36 object-cover rounded-md"
+          />
+        );
+      },
+    });
+
+    return base;
+  }, [activeDateTab, activeTypeTab]);
+
   const filteredAttendances = useMemo(() => {
     if (!attendances) return [];
 
-    return attendances.filter((a) => {
+    return attendances.filter((a: { checkEvent: unknown }) => {
       const events = Array.isArray(a.checkEvent) ? a.checkEvent : [];
 
-      return events.some((ev) => ev.type === activeTypeTab);
+      return events.some((ev: { type: string }) => ev.type === activeTypeTab);
     });
   }, [attendances, activeTypeTab]);
 
+  const rows = useAttendanceRows(filteredAttendances, activeTypeTab);
+
   return (
     <div className="flex flex-1 flex-col gap-4">
-      <Tabs value={activeDateTab} onValueChange={setActiveDateTab}>
+      <Tabs
+        value={activeDateTab}
+        onValueChange={(val) => setActiveDateTab(val as typeof activeDateTab)}
+      >
         <TabsList>
           <TabsTrigger value="day">Harian</TabsTrigger>
           <TabsTrigger value="month">Bulanan</TabsTrigger>
@@ -124,7 +162,10 @@ export default function AttendanceSummaryPage() {
         </TabsContent>
       </Tabs>
 
-      <Tabs value={activeTypeTab} onValueChange={setActiveTypeTab}>
+      <Tabs
+        value={activeTypeTab}
+        onValueChange={(val) => setActiveTypeTab(val as typeof activeTypeTab)}
+      >
         <TabsList>
           <TabsTrigger value="CheckIn">Check in</TabsTrigger>
           <TabsTrigger value="FieldCheckIn">Lapangan Check in</TabsTrigger>
@@ -133,40 +174,7 @@ export default function AttendanceSummaryPage() {
         </TabsList>
 
         <TabsContent key={activeTypeTab} value={activeTypeTab}>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nama</TableHead>
-                {activeDateTab === 'month' && <TableHead>Tanggal</TableHead>}
-                <TableHead>Waktu</TableHead>
-                {activeTypeTab.includes('Field') ? (
-                  <TableHead>Lokasi</TableHead>
-                ) : (
-                  <TableHead>Jarak dari Kantor</TableHead>
-                )}
-                <TableHead>Foto</TableHead>
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
-              {filteredAttendances.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={4} className="text-center text-gray-500">
-                    Tidak ada data
-                  </TableCell>
-                </TableRow>
-              ) : (
-                filteredAttendances.map((a) => (
-                  <AttendanceRow
-                    key={a.checkEvent.id}
-                    a={a}
-                    activeTypeTab={activeTypeTab}
-                    activeDateTab={activeDateTab}
-                  />
-                ))
-              )}
-            </TableBody>
-          </Table>
+          <DataTable columns={columns} data={rows} />
         </TabsContent>
       </Tabs>
     </div>

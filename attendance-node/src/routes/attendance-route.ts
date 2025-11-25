@@ -9,7 +9,7 @@ import {
   getSingleAttendance,
   submitEarlyLeave,
 } from '../controllers/attendance-controller.ts';
-import { upload } from '../middlewares/multer.ts';
+import { uploadAndCompress } from '../middlewares/multer.ts';
 import { validate } from '../middlewares/validate.ts';
 import {
   createAttendanceSchema,
@@ -22,25 +22,25 @@ const router = express.Router();
 router.get('/', getAttendances);
 router.post(
   '/check-in',
-  upload.single('image'),
+  uploadAndCompress.single('image'),
   validate(createAttendanceSchema),
   checkIn,
 );
 router.post(
   '/field-check-in',
-  upload.single('image'),
+  uploadAndCompress.single('image'),
   validate(createAttendanceSchema),
   fieldCheckIn,
 );
 router.post(
   '/field-check-out',
-  upload.single('image'),
+  uploadAndCompress.single('image'),
   validate(createAttendanceSchema),
   fieldCheckOut,
 );
 router.post(
   '/check-out',
-  upload.single('image'),
+  uploadAndCompress.single('image'),
   validate(createAttendanceSchema),
   checkOut,
 );
