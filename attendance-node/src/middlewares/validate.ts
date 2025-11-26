@@ -22,7 +22,7 @@ export const validate =
 
     if (!result.success) {
       return res.status(400).json({
-        error: 'Validasi gagal.',
+        message: 'Validasi gagal.',
         errors: z.treeifyError(result.error),
       });
     }

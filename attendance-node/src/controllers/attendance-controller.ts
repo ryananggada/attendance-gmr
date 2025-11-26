@@ -206,14 +206,14 @@ export const getAttendances = async (req: Request, res: Response) => {
   if ((day && month) || (!day && !month)) {
     return res
       .status(400)
-      .json({ error: 'Provide either ?day=YYYY-MM-DD OR ?month=YYYY-MM' });
+      .json({ message: 'Provide either ?day=YYYY-MM-DD OR ?month=YYYY-MM' });
   }
 
   let rows;
 
   if (day) {
     if (typeof day !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(day)) {
-      return res.status(400).json({ error: 'Invalid day format (YYYY-MM-DD)' });
+      return res.status(400).json({ message: 'Invalid day format (YYYY-MM-DD)' });
     }
 
     rows = await db
@@ -226,7 +226,7 @@ export const getAttendances = async (req: Request, res: Response) => {
 
   if (month) {
     if (typeof month !== 'string' || !/^\d{4}-\d{2}$/.test(month)) {
-      return res.status(400).json({ error: 'Invalid month format (YYYY-MM)' });
+      return res.status(400).json({ message: 'Invalid month format (YYYY-MM)' });
     }
 
     const [year, mon] = month.split('-').map(Number);

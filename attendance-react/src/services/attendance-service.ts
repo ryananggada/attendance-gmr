@@ -1,5 +1,3 @@
-import { toast } from 'sonner';
-
 type CreateAttendanceType = {
   userId: number;
   date: string;
@@ -41,6 +39,11 @@ export const checkIn = async ({
     body: formData,
   });
 
+  if (!response.ok) {
+    const errorBody = await response.json();
+    throw new Error(errorBody.message);
+  }
+
   return response.json();
 };
 
@@ -66,6 +69,11 @@ export const fieldCheckIn = async ({
     credentials: 'include',
     body: formData,
   });
+
+  if (!response.ok) {
+    const errorBody = await response.json();
+    throw new Error(errorBody.message);
+  }
 
   return response.json();
 };
@@ -93,6 +101,11 @@ export const fieldCheckOut = async ({
     body: formData,
   });
 
+  if (!response.ok) {
+    const errorBody = await response.json();
+    throw new Error(errorBody.message);
+  }
+
   return response.json();
 };
 
@@ -119,6 +132,11 @@ export const checkOut = async ({
     body: formData,
   });
 
+  if (!response.ok) {
+    const errorBody = await response.json();
+    throw new Error(errorBody.message);
+  }
+
   return response.json();
 };
 
@@ -143,6 +161,11 @@ export const submitLeave = async ({
       remarks,
     }),
   });
+
+  if (!response.ok) {
+    const errorBody = await response.json();
+    throw new Error(errorBody.message);
+  }
 
   return response.json();
 };
@@ -170,8 +193,11 @@ export const submitEarlyLeave = async ({
   });
 
   if (!response.ok) {
-    toast.error(response.data.error);
+    const errorBody = await response.json();
+    throw new Error(errorBody.message);
   }
+
+  return response.json();
 };
 
 export const getSingleAttendance = async (userId: number, date: string) => {
@@ -185,6 +211,11 @@ export const getSingleAttendance = async (userId: number, date: string) => {
       },
     },
   );
+
+  if (!response.ok) {
+    const errorBody = await response.json();
+    throw new Error(errorBody.message);
+  }
 
   return response.json();
 };
@@ -203,6 +234,11 @@ export const getAttendances = async (
       },
     },
   );
+
+  if (!response.ok) {
+    const errorBody = await response.json();
+    throw new Error(errorBody.message);
+  }
 
   return response.json();
 };

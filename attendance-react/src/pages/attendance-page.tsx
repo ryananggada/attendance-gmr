@@ -100,61 +100,95 @@ export default function AttendancePage() {
   const checkInMutation = useMutation({
     mutationFn: checkIn,
     onSuccess: () => {
-      toast.success('Check in berhasil!');
       queryClient.invalidateQueries({
         queryKey: ['attendance', user!.id, date],
       });
+      
+      toast.success('Check in berhasil!');
+      setCapturedImage('');
+      setOpenDialog(false);
     },
+    onError: (error) => {
+      toast.error(error.message);
+    }
   });
 
   const fieldCheckInMutation = useMutation({
     mutationFn: fieldCheckIn,
     onSuccess: () => {
-      toast.success('Check in lapangan berhasil!');
       queryClient.invalidateQueries({
         queryKey: ['attendance', user!.id, date],
       });
+
+      toast.success('Check in lapangan berhasil!');
+      setCapturedImage('');
+      setOpenDialog(false);
     },
+    onError: (error) => {
+      toast.error(error.message);
+    }
   });
 
   const fieldCheckOutMutation = useMutation({
     mutationFn: fieldCheckOut,
     onSuccess: () => {
-      toast.success('Check out lapangan berhasil!');
       queryClient.invalidateQueries({
         queryKey: ['attendance', user!.id, date],
       });
+
+      toast.success('Check out lapangan berhasil!');
+      setCapturedImage('');
+      setOpenDialog(false);
     },
+    onError: (error) => {
+      toast.error(error.message);
+    }
   });
 
   const checkOutMutation = useMutation({
     mutationFn: checkOut,
     onSuccess: () => {
-      toast.success('Check out berhasil!');
       queryClient.invalidateQueries({
         queryKey: ['attendance', user!.id, date],
       });
+
+      toast.success('Check out berhasil!');
+      setCapturedImage('');
+      setOpenDialog(false);
     },
+    onError: (error) => {
+      toast.error(error.message);
+    }
   });
 
   const earlyLeaveMutation = useMutation({
     mutationFn: submitEarlyLeave,
     onSuccess: () => {
-      toast.success('Izin berhasil!');
       queryClient.invalidateQueries({
         queryKey: ['attendance', user!.id, date],
       });
+
+      toast.success('Izin berhasil!');
+      setEarlyLeaveDialog(false);
     },
+    onError: (error) => {
+      toast.error(error.message);
+    }
   });
 
   const leaveMutation = useMutation({
     mutationFn: submitLeave,
     onSuccess: () => {
-      toast.success('Tidak hadir berhasil!');
       queryClient.invalidateQueries({
         queryKey: ['attendance', user!.id, date],
       });
+
+      toast.success('Tidak hadir berhasil!');
+      setLeaveDialog(false);
     },
+    onError: (error) => {
+      toast.error(error.message);
+    }
   });
 
   const onSubmit = async () => {
@@ -207,9 +241,6 @@ export default function AttendancePage() {
         image: file,
       });
     }
-
-    setCapturedImage('');
-    setOpenDialog(false);
   };
 
   const onLeaveSubmit = async () => {
@@ -220,8 +251,6 @@ export default function AttendancePage() {
       time: format(new Date(), 'HH:mm:ss'),
       remarks: leaveRemarks,
     });
-
-    setLeaveDialog(false);
   };
 
   const onEarlyLeaveSubmit = async () => {
@@ -232,8 +261,6 @@ export default function AttendancePage() {
       time: format(new Date(), 'HH:mm:ss'),
       remarks: earlyLeaveRemarks,
     });
-
-    setEarlyLeaveDialog(false);
   };
 
   useEffect(() => {

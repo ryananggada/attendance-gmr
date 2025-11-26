@@ -1,5 +1,5 @@
 import cookieParser from 'cookie-parser';
-import cors from 'cors';
+import cors, { type CorsOptions } from 'cors';
 import express, {
   type Request,
   type Response,
@@ -23,12 +23,12 @@ app.use(morgan('dev'));
 
 const allowedOrigins = ['http://localhost:5173'];
 
-const corsOptions = {
-  origin: (origin: string, callback: any) => {
-    if (allowedOrigins.indexOf(origin) !== -1 || !origin) {
+const corsOptions: CorsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      callback(new Error('Not allowed by CORS'));
+      callback(new Error("Not allowed by CORS"), false);
     }
   },
   credentials: true,
@@ -58,5 +58,5 @@ app.use('/images', express.static(path.join(__dirname, '../uploads')));
 
 app.use((err: Error, _req: Request, res: Response, _next: NextFunction) => {
   console.error(err);
-  res.status(500).json({ error: err.message || 'Internal Server Error' });
+  res.status(500).json({ message: err.message || 'Internal Server Error' });
 });
