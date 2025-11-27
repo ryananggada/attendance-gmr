@@ -49,7 +49,7 @@ type AttendanceType =
   | 'EarlyLeave';
 
 export default function AttendancePage() {
-  const [capturedImage, setCapturedImage] = useState('');
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [attendanceType, setAttendanceType] =
     useState<AttendanceType>('CheckIn');
   const { getLocation } = useGeolocation();
@@ -105,7 +105,7 @@ export default function AttendancePage() {
       });
       
       toast.success('Check in berhasil!');
-      setCapturedImage('');
+      setCapturedImage(null);
       setOpenDialog(false);
     },
     onError: (error) => {
@@ -121,7 +121,7 @@ export default function AttendancePage() {
       });
 
       toast.success('Check in lapangan berhasil!');
-      setCapturedImage('');
+      setCapturedImage(null);
       setOpenDialog(false);
     },
     onError: (error) => {
@@ -137,7 +137,7 @@ export default function AttendancePage() {
       });
 
       toast.success('Check out lapangan berhasil!');
-      setCapturedImage('');
+      setCapturedImage(null);
       setOpenDialog(false);
     },
     onError: (error) => {
@@ -153,7 +153,7 @@ export default function AttendancePage() {
       });
 
       toast.success('Check out berhasil!');
-      setCapturedImage('');
+      setCapturedImage(null);
       setOpenDialog(false);
     },
     onError: (error) => {
@@ -192,7 +192,7 @@ export default function AttendancePage() {
   });
 
   const onSubmit = async () => {
-    const response = await fetch(capturedImage);
+    const response = await fetch(capturedImage!);
     const blob = await response.blob();
     const file = new File([blob], `attendance-${Date.now()}.jpg`, {
       type: 'image/jpeg',
@@ -319,165 +319,7 @@ export default function AttendancePage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4">
-      {!(cameraStatus === 'granted' && locationStatus === 'granted') && (
-        <Alert variant="destructive">
-          <AlertCircleIcon />
-          <AlertTitle>
-            Mohon nyalain izin lokasi dan kamera di perangkat anda.
-          </AlertTitle>
-        </Alert>
-      )}
-
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader>
-            <CardTitle>Check in</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {checkInEvent ? (
-              <>
-                <p>{checkInEvent.time}</p>
-                <p>
-                  {haversineDistance(
-                    checkInEvent.location[0],
-                    checkInEvent.location[1],
-                  ).toFixed(0)}{' '}
-                  m dari kantor
-                </p>
-                {checkInEvent.image ? (
-                  <img
-                    src={`${import.meta.env.VITE_IMAGE_URL}/${
-                      checkInEvent.image
-                    }`}
-                    alt="Image"
-                    className="mt-2 w-36 h-36 object-cover rounded-md"
-                  />
-                ) : (
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png"
-                    alt="No image"
-                    className="mt-2 w-36 h-36 object-cover rounded-md"
-                  />
-                )}
-              </>
-            ) : (
-              <p>-</p>
-            )}
-          </CardContent>
-        </Card>
-
-        {user?.department.isField && (
-          <>
-            <Card>
-              <CardHeader>
-                <CardTitle>Field</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {fieldCheckInEvent ? (
-                  <>
-                    <p>{fieldCheckInEvent.time}</p>
-                    <p>
-                      {loadingFieldCheckIn ? 'Memuat...' : locationFieldCheckIn}
-                    </p>
-                    {fieldCheckInEvent.image ? (
-                      <img
-                        src={`${import.meta.env.VITE_IMAGE_URL}/${
-                          fieldCheckInEvent.image
-                        }`}
-                        alt="Image"
-                        className="mt-2 w-36 h-36 object-cover rounded-md"
-                      />
-                    ) : (
-                      <img
-                        src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png"
-                        alt="No image"
-                        className="mt-2 w-36 h-36 object-cover rounded-md"
-                      />
-                    )}
-                  </>
-                ) : (
-                  <p>-</p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Return</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {fieldCheckOutEvent ? (
-                  <>
-                    <p>{fieldCheckOutEvent.time}</p>
-                    <p>
-                      {loadingFieldCheckOut
-                        ? 'Memuat...'
-                        : locationFieldCheckOut}
-                    </p>
-                    {fieldCheckOutEvent.image ? (
-                      <img
-                        src={`${import.meta.env.VITE_IMAGE_URL}/${
-                          fieldCheckOutEvent.image
-                        }`}
-                        alt="Image"
-                        className="mt-2 w-36 h-36 object-cover rounded-md"
-                      />
-                    ) : (
-                      <img
-                        src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png"
-                        alt="No image"
-                        className="mt-2 w-36 h-36 object-cover rounded-md"
-                      />
-                    )}
-                  </>
-                ) : (
-                  <p>-</p>
-                )}
-              </CardContent>
-            </Card>
-          </>
-        )}
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Check out</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {checkOutEvent ? (
-              <>
-                <p>{checkOutEvent.time}</p>
-
-                <p>
-                  {haversineDistance(
-                    checkOutEvent.location[0],
-                    checkOutEvent.location[1],
-                  ).toFixed(0)}{' '}
-                  m dari kantor
-                </p>
-                {checkOutEvent.image ? (
-                  <img
-                    src={`${import.meta.env.VITE_IMAGE_URL}/${
-                      checkOutEvent.image
-                    }`}
-                    alt="Image"
-                    className="mt-2 w-36 h-36 object-cover rounded-md"
-                  />
-                ) : (
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png"
-                    alt="No image"
-                    className="mt-2 w-36 h-36 object-cover rounded-md"
-                  />
-                )}
-              </>
-            ) : (
-              <p>-</p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
-      <Dialog
+            <Dialog
         open={openDialog}
         onOpenChange={(isOpen) => {
           setOpenDialog(isOpen);
@@ -504,8 +346,22 @@ export default function AttendancePage() {
           </DialogHeader>
 
           {!capturedImage && <Camera setCapturedImage={setCapturedImage} />}
-          {capturedImage && <img src={capturedImage} />}
-          {capturedImage && <Button onClick={onSubmit}>Submit</Button>}
+          {capturedImage && (
+            <>
+              <div className="w-full max-w-md mx-auto">
+                <div className="aspect-[3/4] bg-black rounded overflow-hidden">
+                  <img 
+                    src={capturedImage} 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+
+              <Button onClick={onSubmit} className="mt-4">
+                Submit
+              </Button>
+            </>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -594,6 +450,164 @@ export default function AttendancePage() {
           </Dialog>
         </div>
       )}
+
+      {!(cameraStatus === 'granted' && locationStatus === 'granted') && (
+        <Alert variant="destructive">
+          <AlertCircleIcon />
+          <AlertTitle>
+            Mohon nyalain izin lokasi dan kamera di perangkat anda.
+          </AlertTitle>
+        </Alert>
+      )}
+
+      <div className="grid md:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>Check In</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {checkInEvent ? (
+              <>
+                <p>{checkInEvent.time}</p>
+                <p>
+                  {haversineDistance(
+                    checkInEvent.location[0],
+                    checkInEvent.location[1],
+                  ).toFixed(0)}{' '}
+                  m dari kantor
+                </p>
+                {checkInEvent.image ? (
+                  <img
+                    src={`${import.meta.env.VITE_IMAGE_URL}/${
+                      checkInEvent.image
+                    }`}
+                    alt="Image"
+                    className="mx-auto mt-2 aspect-3/4 w-48 object-cover rounded-md"
+                  />
+                ) : (
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png"
+                    alt="No image"
+                    className="mt-2 w-36 h-36 object-cover rounded-md"
+                  />
+                )}
+              </>
+            ) : (
+              <p>-</p>
+            )}
+          </CardContent>
+        </Card>
+
+        {user?.department.isField && (
+          <>
+            <Card>
+              <CardHeader>
+                <CardTitle>Field</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {fieldCheckInEvent ? (
+                  <>
+                    <p>{fieldCheckInEvent.time}</p>
+                    <p>
+                      {loadingFieldCheckIn ? 'Memuat...' : locationFieldCheckIn}
+                    </p>
+                    {fieldCheckInEvent.image ? (
+                      <img
+                        src={`${import.meta.env.VITE_IMAGE_URL}/${
+                          fieldCheckInEvent.image
+                        }`}
+                        alt="Image"
+                        className="mx-auto mt-2 aspect-3/4 w-48 object-cover rounded-md"
+                      />
+                    ) : (
+                      <img
+                        src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png"
+                        alt="No image"
+                        className="mt-2 w-36 h-36 object-cover rounded-md"
+                      />
+                    )}
+                  </>
+                ) : (
+                  <p>-</p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Return</CardTitle>
+              </CardHeader>
+              <CardContent>
+                {fieldCheckOutEvent ? (
+                  <>
+                    <p>{fieldCheckOutEvent.time}</p>
+                    <p>
+                      {loadingFieldCheckOut
+                        ? 'Memuat...'
+                        : locationFieldCheckOut}
+                    </p>
+                    {fieldCheckOutEvent.image ? (
+                      <img
+                        src={`${import.meta.env.VITE_IMAGE_URL}/${
+                          fieldCheckOutEvent.image
+                        }`}
+                        alt="Image"
+                        className="mx-auto mt-2 aspect-3/4 w-48 object-cover rounded-md"
+                      />
+                    ) : (
+                      <img
+                        src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png"
+                        alt="No image"
+                        className="mt-2 w-36 h-36 object-cover rounded-md"
+                      />
+                    )}
+                  </>
+                ) : (
+                  <p>-</p>
+                )}
+              </CardContent>
+            </Card>
+          </>
+        )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Check Out</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {checkOutEvent ? (
+              <>
+                <p>{checkOutEvent.time}</p>
+
+                <p>
+                  {haversineDistance(
+                    checkOutEvent.location[0],
+                    checkOutEvent.location[1],
+                  ).toFixed(0)}{' '}
+                  m dari kantor
+                </p>
+                {checkOutEvent.image ? (
+                  <img
+                    src={`${import.meta.env.VITE_IMAGE_URL}/${
+                      checkOutEvent.image
+                    }`}
+                    alt="Image"
+                    className="mx-auto mt-2 aspect-3/4 w-48 object-cover rounded-md"
+                  />
+                ) : (
+                  <img
+                    src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png"
+                    alt="No image"
+                    className="mt-2 w-36 h-36 object-cover rounded-md"
+                  />
+                )}
+              </>
+            ) : (
+              <p>-</p>
+            )}
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

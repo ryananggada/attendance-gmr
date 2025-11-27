@@ -15,6 +15,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
+import { toast } from 'sonner';
 
 export default function EditDepartmentPage() {
   const { id } = useParams();
@@ -25,7 +26,16 @@ export default function EditDepartmentPage() {
     queryFn: () => getDepartmentById(Number(id)),
   });
 
-  const mutation = useMutation({ mutationFn: updateDepartment });
+  const mutation = useMutation({ 
+    mutationFn: updateDepartment,
+    onSuccess: () => {
+      toast.success('Ubah department berhasil!');
+      navigate('/departments');
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    }
+   });
 
   const form = useForm({
     defaultValues: {
@@ -36,7 +46,6 @@ export default function EditDepartmentPage() {
 
   const onSubmit = ({ name, isField }: { name: string; isField: boolean }) => {
     mutation.mutate({ id: Number(id!), name, isField });
-    navigate('/departments');
   };
 
   useEffect(() => {

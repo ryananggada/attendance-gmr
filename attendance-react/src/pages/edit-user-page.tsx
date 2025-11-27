@@ -12,7 +12,8 @@ import { getUser, updatePassword } from '@/services/user-service';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Controller, useForm } from 'react-hook-form';
-import { useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
+import { toast } from 'sonner';
 import z from 'zod';
 
 const formSchema = z
@@ -27,6 +28,7 @@ const formSchema = z
 
 export default function EditUserPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { data: user, isLoading } = useQuery({
     queryKey: ['user', id],
     queryFn: () => getUser(Number(id)),
@@ -34,6 +36,13 @@ export default function EditUserPage() {
 
   const mutation = useMutation({
     mutationFn: updatePassword,
+    onSuccess: () => {
+      toast.success('Ubah password berhasil!');
+      navigate('/users');
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    }
   });
 
   const form = useForm<z.infer<typeof formSchema>>({

@@ -11,6 +11,7 @@ import { createDepartment } from '@/services/department-service';
 import { useMutation } from '@tanstack/react-query';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
+import { toast } from 'sonner';
 
 export default function AddDepartmentPage() {
   const navigate = useNavigate();
@@ -21,11 +22,19 @@ export default function AddDepartmentPage() {
     },
   });
 
-  const mutation = useMutation({ mutationFn: createDepartment });
+  const mutation = useMutation({ 
+    mutationFn: createDepartment,
+    onSuccess: () => {
+      toast.success('Tambah department berhasil!');
+      navigate('/departments');
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    }
+  });
 
   const onSubmit = ({ name, isField }: { name: string; isField: boolean }) => {
     mutation.mutate({ name, isField });
-    navigate('/departments');
   };
 
   return (

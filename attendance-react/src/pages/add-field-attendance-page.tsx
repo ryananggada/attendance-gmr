@@ -16,6 +16,7 @@ import { useMutation } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
+import { toast } from 'sonner';
 import z from 'zod';
 
 const formSchema = z.object({
@@ -34,8 +35,13 @@ export default function AddFieldAttendancePage() {
   const navigate = useNavigate();
   const mutation = useMutation({
     mutationFn: createFieldAttendance,
-    onSuccess: () => navigate('/field-attendance'),
-    onError: (err) => console.log(err),
+    onSuccess: () => {
+      toast.success('Tambah lapangan kehadiran berhasil!');
+      navigate('/field-attendance');
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
   });
 
   const form = useForm({

@@ -18,6 +18,8 @@ import { createUser } from '@/services/user-service';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Controller, useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router';
+import { toast } from 'sonner';
 import z from 'zod';
 
 const formSchema = z
@@ -35,6 +37,7 @@ const formSchema = z
   });
 
 export default function AddUserPage() {
+  const navigate = useNavigate();
   const { data: departments } = useQuery({
     queryKey: ['departments'],
     queryFn: getDepartments,
@@ -42,6 +45,13 @@ export default function AddUserPage() {
 
   const mutation = useMutation({
     mutationFn: createUser,
+    onSuccess: () => {
+      toast.success('Tambah user berhasil!');
+      navigate('/users');
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    }
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
