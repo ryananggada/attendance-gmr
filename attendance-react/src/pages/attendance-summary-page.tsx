@@ -2,7 +2,12 @@ import { Datepicker } from '@/components/date-picker';
 import { MonthYearPicker } from '@/components/month-year-picker';
 import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useReverseGeocode } from '@/hooks/use-reverse-geocode';
 import { haversineDistance } from '@/lib/distance';
@@ -17,7 +22,7 @@ type EventDetail = {
   time: string;
   location: [number, number];
   image: string;
-}
+};
 
 type RawAttendanceData = {
   user: { fullName: string };
@@ -39,8 +44,8 @@ type AttendanceRow = {
     FieldCheckIn?: EventDetail;
     FieldCheckOut?: EventDetail;
     CheckOut?: EventDetail;
-  }
-}
+  };
+};
 
 export default function AttendanceSummaryPage() {
   const [date, setDate] = useState(new Date());
@@ -51,87 +56,88 @@ export default function AttendanceSummaryPage() {
   const [activeDateTab, setActiveDateTab] = useState<'day' | 'month'>('day');
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
 
-  const { data: attendances } = useQuery({
+  const { data: attendances, isLoading } = useQuery({
     queryKey: ['attendances', date, monthDate, activeDateTab],
-    queryFn: () => getAttendances(
-       activeDateTab,
+    queryFn: () =>
+      getAttendances(
+        activeDateTab,
         activeDateTab === 'day'
           ? format(date, 'yyyy-MM-dd')
           : `${monthDate.year}-${String(monthDate.month).padStart(2, '0')}`,
-    )
+      ),
   });
 
   const { data: location } = useReverseGeocode(
     selectedEvent?.location?.[0] ?? null,
-    selectedEvent?.location?.[1] ?? null
+    selectedEvent?.location?.[1] ?? null,
   );
 
   const columns = useMemo<ColumnDef<AttendanceRow>[]>(() => {
     const base: ColumnDef<AttendanceRow>[] = [
       {
-        header: "Nama",
-        accessorKey: "name",
+        header: 'Nama',
+        accessorKey: 'name',
       },
       {
-        header: "Check In",
+        header: 'Check In',
         cell: ({ row }) => {
           const event = row.original.events.CheckIn;
           return (
             <Button
-              className='p-0 text-black'
-              variant='link'
+              className="p-0 text-black"
+              variant="link"
               disabled={!event}
               onClick={() => setSelectedEvent(event ?? null)}
             >
-              {event ? event.time : "-"}
+              {event ? event.time : '-'}
             </Button>
           );
         },
       },
       {
-        header: "Field",
+        header: 'Field',
         cell: ({ row }) => {
           const event = row.original.events.FieldCheckIn;
           return (
             <Button
-              className='p-0 text-black'
-              variant='link'
+              className="p-0 text-black"
+              variant="link"
               disabled={!event}
               onClick={() => setSelectedEvent(event ?? null)}
             >
-              {event ? event.time : "-"}
+              {event ? event.time : '-'}
             </Button>
           );
         },
       },
       {
-        header: "Return",
+        header: 'Return',
         cell: ({ row }) => {
           const event = row.original.events.FieldCheckOut;
           return (
             <Button
-              className='p-0 text-black'
-              variant='link'
+              className="p-0 text-black"
+              variant="link"
               disabled={!event}
               onClick={() => setSelectedEvent(event ?? null)}
             >
-              {event ? event.time : "-"}
+              {event ? event.time : '-'}
             </Button>
           );
         },
       },
       {
-        header: "Check Out",
+        header: 'Check Out',
         cell: ({ row }) => {
           const event = row.original.events.CheckOut;
           return (
             <Button
-              className='p-0 text-black'
-              variant='link'
+              className="p-0 text-black"
+              variant="link"
               disabled={!event}
               onClick={() => setSelectedEvent(event ?? null)}
             >
-              {event ? event.time : "-"}
+              {event ? event.time : '-'}
             </Button>
           );
         },
@@ -140,12 +146,12 @@ export default function AttendanceSummaryPage() {
 
     if (activeDateTab === 'month') {
       base.splice(1, 0, {
-        accessorKey: "date",
-        header: "Tanggal",
+        accessorKey: 'date',
+        header: 'Tanggal',
         cell: ({ row }) => {
           const date = row.original.date;
-          return format(new Date(date), "dd/MM/yyyy")
-        }
+          return format(new Date(date), 'dd/MM/yyyy');
+        },
       });
     }
 
@@ -158,8 +164,12 @@ export default function AttendanceSummaryPage() {
     return attendances.map((a: RawAttendanceData) => {
       const events = {
         CheckIn: a.checkEvent.find((e: EventDetail) => e.type === 'CheckIn'),
-        FieldCheckIn: a.checkEvent.find((e: EventDetail) => e.type === 'FieldCheckIn'),
-        FieldCheckOut: a.checkEvent.find((e: EventDetail) => e.type === 'FieldCheckOut'),
+        FieldCheckIn: a.checkEvent.find(
+          (e: EventDetail) => e.type === 'FieldCheckIn',
+        ),
+        FieldCheckOut: a.checkEvent.find(
+          (e: EventDetail) => e.type === 'FieldCheckOut',
+        ),
         CheckOut: a.checkEvent.find((e: EventDetail) => e.type === 'CheckOut'),
       };
 
@@ -168,7 +178,7 @@ export default function AttendanceSummaryPage() {
         name: a.user.fullName,
         date: a.attendance.date,
         events,
-      }
+      };
     });
   }, [attendances]);
 
@@ -183,9 +193,9 @@ export default function AttendanceSummaryPage() {
       case 'CheckOut':
         return 'Check Out';
       default:
-        return '-';  
+        return '-';
     }
-  }
+  };
 
   return (
     <div className="flex flex-1 flex-col gap-4">
@@ -207,31 +217,41 @@ export default function AttendanceSummaryPage() {
         </TabsContent>
       </Tabs>
 
-      <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
+      <Dialog
+        open={!!selectedEvent}
+        onOpenChange={() => setSelectedEvent(null)}
+      >
         {selectedEvent && (
           <DialogContent>
-            <DialogTitle>
-              {renderDialogTitle(selectedEvent.type)}
-            </DialogTitle>
+            <DialogTitle>{renderDialogTitle(selectedEvent.type)}</DialogTitle>
 
             <DialogDescription asChild>
-              <div className='!text-black space-y-4'>
+              <div className="!text-black space-y-4">
                 <p>
                   <strong>Waktu:</strong> {selectedEvent.time}
                 </p>
-                
-                {['FieldCheckIn', 'FieldCheckOut'].includes(selectedEvent.type) ? (
+
+                {['FieldCheckIn', 'FieldCheckOut'].includes(
+                  selectedEvent.type,
+                ) ? (
                   <p>
                     <strong>Lokasi:</strong> {location ?? '-'}
                   </p>
-                ): (
+                ) : (
                   <p>
-                    <strong>Jarak dari kantor:</strong> {haversineDistance(selectedEvent?.location?.[0], selectedEvent?.location?.[1]).toFixed(0)} m
+                    <strong>Jarak dari kantor:</strong>{' '}
+                    {haversineDistance(
+                      selectedEvent?.location?.[0],
+                      selectedEvent?.location?.[1],
+                    ).toFixed(0)}{' '}
+                    m
                   </p>
-                )}   
+                )}
 
                 <img
-                  src={`${import.meta.env.VITE_IMAGE_URL}/${selectedEvent.image}`}
+                  src={`${import.meta.env.VITE_IMAGE_URL}/${
+                    selectedEvent.image
+                  }`}
                   className="w-full aspect-3/4 object-cover rounded"
                 />
               </div>
@@ -240,7 +260,7 @@ export default function AttendanceSummaryPage() {
         )}
       </Dialog>
 
-      <DataTable columns={columns} data={rows} />
+      <DataTable columns={columns} data={rows} isLoading={isLoading} />
     </div>
   );
 }

@@ -85,19 +85,11 @@ export default function AddFieldAttendancePage() {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)}>
       <FieldGroup>
-        {form.watch('image') ? (
-          <img
-            src={URL.createObjectURL(form.watch('image'))}
-            alt="Preview"
-            className="mt-2 w-40 h-40 object-cover rounded-md"
-          />
-        ) : (
-          <img
-            src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png"
-            alt="No image"
-            className="mt-2 w-40 h-40 object-cover rounded-md"
-          />
-        )}
+        <img
+          src={URL.createObjectURL(form.watch('image'))}
+          alt="Preview"
+          className="mt-2 aspect-3/4 w-48 object-cover rounded-md"
+        />
 
         <Controller
           name="image"

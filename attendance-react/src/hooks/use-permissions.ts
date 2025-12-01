@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 
-type PermissionStatus = 'idle' | 'granted' | 'denied' | 'prompt' | 'error';
+type PermissionStatus = 'loading' | 'granted' | 'denied' | 'prompt' | 'error';
 
 export function usePermissions() {
-  const [cameraStatus, setCameraStatus] = useState<PermissionStatus>('idle');
+  const [cameraStatus, setCameraStatus] = useState<PermissionStatus>('loading');
   const [locationStatus, setLocationStatus] =
-    useState<PermissionStatus>('idle');
+    useState<PermissionStatus>('loading');
 
   const requestCamera = useCallback(async () => {
     try {
@@ -22,6 +22,7 @@ export function usePermissions() {
       setLocationStatus('error');
       return;
     }
+
     navigator.geolocation.getCurrentPosition(
       () => setLocationStatus('granted'),
       () => setLocationStatus('denied'),
@@ -29,30 +30,40 @@ export function usePermissions() {
   }, []);
 
   useEffect(() => {
-    if (navigator.permissions) {
-      navigator.permissions
-        .query({ name: 'camera' as PermissionName })
-        .then((status) => {
-          setCameraStatus(status.state as PermissionStatus);
-          status.onchange = () =>
-            setCameraStatus(status.state as PermissionStatus);
-        })
-        .catch(() => setCameraStatus('error'));
+    async function check() {
+      if (!navigator.permissions) {
+        setCameraStatus('prompt');
+        setLocationStatus('prompt');
+        return;
+      }
 
-      navigator.permissions
-        .query({ name: 'geolocation' })
-        .then((status) => {
-          setLocationStatus(status.state as PermissionStatus);
-          status.onchange = () =>
-            setLocationStatus(status.state as PermissionStatus);
-        })
-        .catch(() => setLocationStatus('error'));
+      try {
+        const cam = await navigator.permissions.query({
+          name: 'camera' as PermissionName,
+        });
+        setCameraStatus(cam.state as PermissionState);
+        cam.onchange = () => setCameraStatus(cam.state as PermissionState);
+
+        const loc = await navigator.permissions.query({ name: 'geolocation' });
+        setLocationStatus(loc.state as PermissionState);
+        loc.onchange = () => setLocationStatus(loc.state as PermissionState);
+      } catch {
+        setCameraStatus('error');
+        setLocationStatus('error');
+      }
     }
+
+    check();
   }, []);
+
+  const isLoading = cameraStatus === 'loading' || locationStatus === 'loading';
+  const isGranted = cameraStatus === 'granted' && locationStatus === 'granted';
 
   return {
     cameraStatus,
     locationStatus,
+    isLoading,
+    isGranted,
     requestCamera,
     requestLocation,
   };

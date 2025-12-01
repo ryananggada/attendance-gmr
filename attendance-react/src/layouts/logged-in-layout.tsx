@@ -1,6 +1,7 @@
 import { useAuth } from '@/contexts/auth-context';
 import { Navigate, Outlet, useLocation } from 'react-router';
 import DashboardLayout from './dashboard-layout';
+import { Spinner } from '@/components/ui/spinner';
 
 export default function LoggedInLayout({
   allowedRoles,
@@ -13,7 +14,7 @@ export default function LoggedInLayout({
   const location = useLocation();
 
   if (loading) {
-    return <div>Loading...</div>;
+    return <Spinner className="mx-auto mt-6 size-12" />;
   }
 
   if (!user) {

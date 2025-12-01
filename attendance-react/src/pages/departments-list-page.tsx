@@ -43,7 +43,7 @@ const columns: ColumnDef<Department>[] = [
 ];
 
 export default function DepartmentsListPage() {
-  const { data: departments } = useQuery({
+  const { data: departments = [], isLoading } = useQuery({
     queryKey: ['departments'],
     queryFn: getDepartments,
   });
@@ -54,7 +54,7 @@ export default function DepartmentsListPage() {
         <Link to="/departments/create">Tambah Department</Link>
       </Button>
 
-      <DataTable columns={columns} data={departments ?? []} />
+      <DataTable columns={columns} data={departments} isLoading={isLoading} />
     </div>
   );
 }

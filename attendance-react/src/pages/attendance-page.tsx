@@ -19,6 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Spinner } from '@/components/ui/spinner';
 import { useAuth } from '@/contexts/auth-context';
 import { useGeolocation } from '@/hooks/use-geolocation';
 import { usePermissions } from '@/hooks/use-permissions';
@@ -53,8 +54,14 @@ export default function AttendancePage() {
   const [attendanceType, setAttendanceType] =
     useState<AttendanceType>('CheckIn');
   const { getLocation } = useGeolocation();
-  const { cameraStatus, requestCamera, locationStatus, requestLocation } =
-    usePermissions();
+  const {
+    isLoading: isPermissionsLoading,
+    isGranted,
+    cameraStatus,
+    locationStatus,
+    requestCamera,
+    requestLocation,
+  } = usePermissions();
   const { user } = useAuth();
   const date = format(new Date(), 'yyyy-MM-dd');
 
@@ -69,7 +76,11 @@ export default function AttendancePage() {
 
   const queryClient = useQueryClient();
 
-  const { data: attendanceData, isFetched } = useQuery({
+  const {
+    data: attendanceData,
+    isFetched,
+    isLoading: isAttendanceLoading,
+  } = useQuery({
     queryKey: ['attendance', user!.id, date],
     queryFn: () => getSingleAttendance(user!.id, date),
   });
@@ -103,14 +114,14 @@ export default function AttendancePage() {
       queryClient.invalidateQueries({
         queryKey: ['attendance', user!.id, date],
       });
-      
+
       toast.success('Check in berhasil!');
       setCapturedImage(null);
       setOpenDialog(false);
     },
     onError: (error) => {
       toast.error(error.message);
-    }
+    },
   });
 
   const fieldCheckInMutation = useMutation({
@@ -126,7 +137,7 @@ export default function AttendancePage() {
     },
     onError: (error) => {
       toast.error(error.message);
-    }
+    },
   });
 
   const fieldCheckOutMutation = useMutation({
@@ -142,7 +153,7 @@ export default function AttendancePage() {
     },
     onError: (error) => {
       toast.error(error.message);
-    }
+    },
   });
 
   const checkOutMutation = useMutation({
@@ -158,7 +169,7 @@ export default function AttendancePage() {
     },
     onError: (error) => {
       toast.error(error.message);
-    }
+    },
   });
 
   const earlyLeaveMutation = useMutation({
@@ -173,7 +184,7 @@ export default function AttendancePage() {
     },
     onError: (error) => {
       toast.error(error.message);
-    }
+    },
   });
 
   const leaveMutation = useMutation({
@@ -188,7 +199,7 @@ export default function AttendancePage() {
     },
     onError: (error) => {
       toast.error(error.message);
-    }
+    },
   });
 
   const onSubmit = async () => {
@@ -264,8 +275,11 @@ export default function AttendancePage() {
   };
 
   useEffect(() => {
-    if (!(cameraStatus === 'granted' && locationStatus === 'granted')) {
+    if (cameraStatus !== 'granted') {
       requestCamera();
+    }
+
+    if (locationStatus !== 'granted') {
       requestLocation();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -319,139 +333,147 @@ export default function AttendancePage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4">
-            <Dialog
-        open={openDialog}
-        onOpenChange={(isOpen) => {
-          setOpenDialog(isOpen);
+      {isPermissionsLoading ? (
+        <Spinner className="mx-auto size-12" />
+      ) : isGranted ? (
+        <>
+          <Dialog
+            open={openDialog}
+            onOpenChange={(isOpen) => {
+              setOpenDialog(isOpen);
 
-          if (!isOpen) {
-            setCapturedImage('');
-          }
-        }}
-      >
-        <DialogTrigger asChild>
-          <Button
-            className="mx-auto min-w-[156px]"
-            disabled={
-              !(cameraStatus === 'granted' && locationStatus === 'granted') ||
-              ['Done', 'Leave', 'EarlyLeave'].includes(attendanceType)
-            }
+              if (!isOpen) {
+                setCapturedImage('');
+              }
+            }}
           >
-            Absen
-          </Button>
-        </DialogTrigger>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Absen</DialogTitle>
-          </DialogHeader>
-
-          {!capturedImage && <Camera setCapturedImage={setCapturedImage} />}
-          {capturedImage && (
-            <>
-              <div className="w-full max-w-md mx-auto">
-                <div className="aspect-[3/4] bg-black rounded overflow-hidden">
-                  <img 
-                    src={capturedImage} 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              </div>
-
-              <Button onClick={onSubmit} className="mt-4">
-                Submit
-              </Button>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      {attendanceType === 'CheckIn' && (
-        <div className="mx-auto">
-          <Dialog open={leaveDialog} onOpenChange={setLeaveDialog}>
-            <DialogTrigger asChild>
-              <Button variant="destructive" className="min-w-[156px]">
-                Tidak hadir
-              </Button>
-            </DialogTrigger>
-
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  Yakin absen tidak hadir? Pilih alasannya.
-                </DialogTitle>
-              </DialogHeader>
-
-              <Field>
-                <Select onValueChange={(e) => setLeaveType(e)}>
-                  <SelectTrigger className="w-[256px]">
-                    <SelectValue placeholder="Pilih alasan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="Sick">Sakit</SelectItem>
-                      <SelectItem value="Leave">Cuti</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-
-                <FieldLabel>Keterangan</FieldLabel>
-                <Input
-                  value={leaveRemarks}
-                  onChange={(e) => setLeaveRemarks(e.target.value)}
-                />
-              </Field>
-
-              <Button onClick={onLeaveSubmit}>Submit</Button>
-            </DialogContent>
-          </Dialog>
-        </div>
-      )}
-
-      {attendanceType !== 'CheckIn' && (
-        <div className="mx-auto">
-          <Dialog open={earlyLeaveDialog} onOpenChange={setEarlyLeaveDialog}>
             <DialogTrigger asChild>
               <Button
-                disabled={['EarlyLeave', 'Done'].includes(attendanceType)}
-                variant="secondary"
-                className="min-w-[156px]"
+                className="mx-auto min-w-[156px]"
+                disabled={
+                  !(
+                    cameraStatus === 'granted' && locationStatus === 'granted'
+                  ) || ['Done', 'Leave', 'EarlyLeave'].includes(attendanceType)
+                }
               >
-                Izin
+                Absen
               </Button>
             </DialogTrigger>
-
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Yakin izin? Pilih alasannya.</DialogTitle>
+                <DialogTitle>Absen</DialogTitle>
               </DialogHeader>
 
-              <Field>
-                <Select onValueChange={(e) => setEarlyLeaveType(e)}>
-                  <SelectTrigger className="w-[256px]">
-                    <SelectValue placeholder="Pilih alasan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="Time">Waktu Kerja</SelectItem>
-                      <SelectItem value="Early">Pulang Cepat</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+              {!capturedImage && <Camera setCapturedImage={setCapturedImage} />}
+              {capturedImage && (
+                <>
+                  <div className="w-full max-w-md mx-auto">
+                    <div className="aspect-[3/4] bg-black rounded overflow-hidden">
+                      <img
+                        src={capturedImage}
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                  </div>
 
-                <FieldLabel>Keterangan</FieldLabel>
-                <Input
-                  value={earlyLeaveRemarks}
-                  onChange={(e) => setEarlyLeaveRemarks(e.target.value)}
-                />
-              </Field>
-
-              <Button onClick={onEarlyLeaveSubmit}>Submit</Button>
+                  <Button onClick={onSubmit} className="mt-4">
+                    Submit
+                  </Button>
+                </>
+              )}
             </DialogContent>
           </Dialog>
-        </div>
-      )}
 
-      {!(cameraStatus === 'granted' && locationStatus === 'granted') && (
+          {attendanceType === 'CheckIn' && (
+            <div className="mx-auto">
+              <Dialog open={leaveDialog} onOpenChange={setLeaveDialog}>
+                <DialogTrigger asChild>
+                  <Button variant="destructive" className="min-w-[156px]">
+                    Tidak hadir
+                  </Button>
+                </DialogTrigger>
+
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>
+                      Yakin absen tidak hadir? Pilih alasannya.
+                    </DialogTitle>
+                  </DialogHeader>
+
+                  <Field>
+                    <Select onValueChange={(e) => setLeaveType(e)}>
+                      <SelectTrigger className="w-[256px]">
+                        <SelectValue placeholder="Pilih alasan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="Sick">Sakit</SelectItem>
+                          <SelectItem value="Leave">Cuti</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+
+                    <FieldLabel>Keterangan</FieldLabel>
+                    <Input
+                      value={leaveRemarks}
+                      onChange={(e) => setLeaveRemarks(e.target.value)}
+                    />
+                  </Field>
+
+                  <Button onClick={onLeaveSubmit}>Submit</Button>
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
+
+          {attendanceType !== 'CheckIn' && (
+            <div className="mx-auto">
+              <Dialog
+                open={earlyLeaveDialog}
+                onOpenChange={setEarlyLeaveDialog}
+              >
+                <DialogTrigger asChild>
+                  <Button
+                    disabled={['EarlyLeave', 'Done'].includes(attendanceType)}
+                    variant="secondary"
+                    className="min-w-[156px]"
+                  >
+                    Izin
+                  </Button>
+                </DialogTrigger>
+
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Yakin izin? Pilih alasannya.</DialogTitle>
+                  </DialogHeader>
+
+                  <Field>
+                    <Select onValueChange={(e) => setEarlyLeaveType(e)}>
+                      <SelectTrigger className="w-[256px]">
+                        <SelectValue placeholder="Pilih alasan" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          <SelectItem value="Time">Waktu Kerja</SelectItem>
+                          <SelectItem value="Early">Pulang Cepat</SelectItem>
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+
+                    <FieldLabel>Keterangan</FieldLabel>
+                    <Input
+                      value={earlyLeaveRemarks}
+                      onChange={(e) => setEarlyLeaveRemarks(e.target.value)}
+                    />
+                  </Field>
+
+                  <Button onClick={onEarlyLeaveSubmit}>Submit</Button>
+                </DialogContent>
+              </Dialog>
+            </div>
+          )}
+        </>
+      ) : (
         <Alert variant="destructive">
           <AlertCircleIcon />
           <AlertTitle>
@@ -466,7 +488,9 @@ export default function AttendancePage() {
             <CardTitle>Check In</CardTitle>
           </CardHeader>
           <CardContent>
-            {checkInEvent ? (
+            {isAttendanceLoading ? (
+              <Spinner className="size-6" />
+            ) : checkInEvent ? (
               <>
                 <p>{checkInEvent.time}</p>
                 <p>
@@ -476,21 +500,13 @@ export default function AttendancePage() {
                   ).toFixed(0)}{' '}
                   m dari kantor
                 </p>
-                {checkInEvent.image ? (
-                  <img
-                    src={`${import.meta.env.VITE_IMAGE_URL}/${
-                      checkInEvent.image
-                    }`}
-                    alt="Image"
-                    className="mx-auto mt-2 aspect-3/4 w-48 object-cover rounded-md"
-                  />
-                ) : (
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png"
-                    alt="No image"
-                    className="mt-2 w-36 h-36 object-cover rounded-md"
-                  />
-                )}
+                <img
+                  src={`${import.meta.env.VITE_IMAGE_URL}/${
+                    checkInEvent.image
+                  }`}
+                  alt="Image"
+                  className="mx-auto mt-2 aspect-3/4 w-48 object-cover rounded-md"
+                />
               </>
             ) : (
               <p>-</p>
@@ -505,27 +521,21 @@ export default function AttendancePage() {
                 <CardTitle>Field</CardTitle>
               </CardHeader>
               <CardContent>
-                {fieldCheckInEvent ? (
+                {isAttendanceLoading ? (
+                  <Spinner className="size-6" />
+                ) : fieldCheckInEvent ? (
                   <>
                     <p>{fieldCheckInEvent.time}</p>
                     <p>
                       {loadingFieldCheckIn ? 'Memuat...' : locationFieldCheckIn}
                     </p>
-                    {fieldCheckInEvent.image ? (
-                      <img
-                        src={`${import.meta.env.VITE_IMAGE_URL}/${
-                          fieldCheckInEvent.image
-                        }`}
-                        alt="Image"
-                        className="mx-auto mt-2 aspect-3/4 w-48 object-cover rounded-md"
-                      />
-                    ) : (
-                      <img
-                        src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png"
-                        alt="No image"
-                        className="mt-2 w-36 h-36 object-cover rounded-md"
-                      />
-                    )}
+                    <img
+                      src={`${import.meta.env.VITE_IMAGE_URL}/${
+                        fieldCheckInEvent.image
+                      }`}
+                      alt="Image"
+                      className="mx-auto mt-2 aspect-3/4 w-48 object-cover rounded-md"
+                    />
                   </>
                 ) : (
                   <p>-</p>
@@ -538,7 +548,9 @@ export default function AttendancePage() {
                 <CardTitle>Return</CardTitle>
               </CardHeader>
               <CardContent>
-                {fieldCheckOutEvent ? (
+                {isAttendanceLoading ? (
+                  <Spinner className="size-6" />
+                ) : fieldCheckOutEvent ? (
                   <>
                     <p>{fieldCheckOutEvent.time}</p>
                     <p>
@@ -546,21 +558,13 @@ export default function AttendancePage() {
                         ? 'Memuat...'
                         : locationFieldCheckOut}
                     </p>
-                    {fieldCheckOutEvent.image ? (
-                      <img
-                        src={`${import.meta.env.VITE_IMAGE_URL}/${
-                          fieldCheckOutEvent.image
-                        }`}
-                        alt="Image"
-                        className="mx-auto mt-2 aspect-3/4 w-48 object-cover rounded-md"
-                      />
-                    ) : (
-                      <img
-                        src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png"
-                        alt="No image"
-                        className="mt-2 w-36 h-36 object-cover rounded-md"
-                      />
-                    )}
+                    <img
+                      src={`${import.meta.env.VITE_IMAGE_URL}/${
+                        fieldCheckOutEvent.image
+                      }`}
+                      alt="Image"
+                      className="mx-auto mt-2 aspect-3/4 w-48 object-cover rounded-md"
+                    />
                   </>
                 ) : (
                   <p>-</p>
@@ -575,7 +579,9 @@ export default function AttendancePage() {
             <CardTitle>Check Out</CardTitle>
           </CardHeader>
           <CardContent>
-            {checkOutEvent ? (
+            {isAttendanceLoading ? (
+              <Spinner className="size-6" />
+            ) : checkOutEvent ? (
               <>
                 <p>{checkOutEvent.time}</p>
 
@@ -586,21 +592,13 @@ export default function AttendancePage() {
                   ).toFixed(0)}{' '}
                   m dari kantor
                 </p>
-                {checkOutEvent.image ? (
-                  <img
-                    src={`${import.meta.env.VITE_IMAGE_URL}/${
-                      checkOutEvent.image
-                    }`}
-                    alt="Image"
-                    className="mx-auto mt-2 aspect-3/4 w-48 object-cover rounded-md"
-                  />
-                ) : (
-                  <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/a/a3/Image-not-found.png"
-                    alt="No image"
-                    className="mt-2 w-36 h-36 object-cover rounded-md"
-                  />
-                )}
+                <img
+                  src={`${import.meta.env.VITE_IMAGE_URL}/${
+                    checkOutEvent.image
+                  }`}
+                  alt="Image"
+                  className="mx-auto mt-2 aspect-3/4 w-48 object-cover rounded-md"
+                />
               </>
             ) : (
               <p>-</p>

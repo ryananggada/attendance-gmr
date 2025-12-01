@@ -55,7 +55,10 @@ const columns: ColumnDef<User>[] = [
 ];
 
 export default function UsersListPage() {
-  const { data: users } = useQuery({ queryKey: ['users'], queryFn: getUsers });
+  const { data: users = [], isLoading } = useQuery({
+    queryKey: ['users'],
+    queryFn: getUsers,
+  });
 
   return (
     <div className="flex flex-1 flex-col gap-4">
@@ -63,7 +66,7 @@ export default function UsersListPage() {
         <Link to="/users/create">Tambah User</Link>
       </Button>
 
-      <DataTable columns={columns} data={users ?? []} />
+      <DataTable columns={columns} data={users} isLoading={isLoading} />
     </div>
   );
 }

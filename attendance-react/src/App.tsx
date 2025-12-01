@@ -16,6 +16,7 @@ import EditDepartmentPage from './pages/edit-department-page';
 import LoggedInLayout from './layouts/logged-in-layout';
 import NotFoundPage from './pages/not-found-page';
 import AttendanceSummaryPage from './pages/attendance-summary-page';
+import FieldAttendanceSummaryPage from './pages/field-attendance-summary-page';
 
 export default function App() {
   return (
@@ -44,6 +45,10 @@ export default function App() {
           <Route
             path="attendance-summary"
             element={<AttendanceSummaryPage />}
+          />
+          <Route
+            path="field-attendance-summary"
+            element={<FieldAttendanceSummaryPage />}
           />
         </Route>
 

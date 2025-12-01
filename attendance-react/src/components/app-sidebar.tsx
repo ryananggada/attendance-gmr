@@ -5,6 +5,7 @@ import {
   LandmarkIcon,
   LogOutIcon,
   NotebookTabsIcon,
+  NotebookTextIcon,
   UsersIcon,
 } from 'lucide-react';
 import { NavMain } from './nav-main';
@@ -54,6 +55,12 @@ const data = {
       title: 'Attendance Summary',
       url: '/attendance-summary',
       icon: NotebookTabsIcon,
+      roles: ['Admin'],
+    },
+    {
+      title: 'Field Attendance Summary',
+      url: '/field-attendance-summary',
+      icon: NotebookTextIcon,
       roles: ['Admin'],
     },
   ],

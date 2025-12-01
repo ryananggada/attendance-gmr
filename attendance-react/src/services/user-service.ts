@@ -59,9 +59,13 @@ export const getUser = async (id: number) => {
 export const updateUser = async ({
   id,
   fullName,
+  departmentId,
+  role,
 }: {
   id: number;
   fullName: string;
+  departmentId: number;
+  role: 'Admin' | 'User';
 }) => {
   const response = await fetch(`${import.meta.env.VITE_NODE_URL}/users/${id}`, {
     method: 'PATCH',
@@ -69,7 +73,7 @@ export const updateUser = async ({
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ fullName }),
+    body: JSON.stringify({ fullName, departmentId, role }),
   });
 
   return response.json();
