@@ -16,11 +16,12 @@ import {
 
 const formSchema = z.object({
   username: z.string().min(1, {
-    message: 'Username is required',
+    message: 'Username dibutuhkan',
   }),
-  password: z.string().min(1, {
-    message: 'Password is required',
-  }),
+  password: z
+    .string()
+    .min(1, 'Password dibutuhkan')
+    .min(8, 'Password harus 8 karakter atau lebih'),
 });
 
 export default function LoginPage() {

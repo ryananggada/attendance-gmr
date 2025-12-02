@@ -11,11 +11,18 @@ import {
   getDepartmentById,
   updateDepartment,
 } from '@/services/department-service';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
 import { toast } from 'sonner';
+import z from 'zod';
+
+const formSchema = z.object({
+  name: z.string().min(1, 'Nama dibutuhkan'),
+  isField: z.boolean(),
+});
 
 export default function EditDepartmentPage() {
   const { id } = useParams();
@@ -26,7 +33,7 @@ export default function EditDepartmentPage() {
     queryFn: () => getDepartmentById(Number(id)),
   });
 
-  const mutation = useMutation({ 
+  const mutation = useMutation({
     mutationFn: updateDepartment,
     onSuccess: () => {
       toast.success('Ubah department berhasil!');
@@ -34,10 +41,11 @@ export default function EditDepartmentPage() {
     },
     onError: (error) => {
       toast.error(error.message);
-    }
-   });
+    },
+  });
 
   const form = useForm({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       isField: false,

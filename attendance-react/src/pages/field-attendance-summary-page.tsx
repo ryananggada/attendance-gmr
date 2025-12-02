@@ -41,9 +41,10 @@ export default function FieldAttendanceSummaryPage() {
   }, [users]);
 
   const { data: fieldAttendances = [], isLoading } = useQuery({
-    queryKey: ['fieldAttendances'],
+    queryKey: ['fieldAttendances', selectedUserId, date],
     queryFn: () =>
       getFieldAttendances(Number(selectedUserId), format(date, 'yyyy-MM-dd')),
+    enabled: !!selectedUserId,
   });
 
   const columns: ColumnDef<FieldAttendance>[] = [
@@ -78,7 +79,7 @@ export default function FieldAttendanceSummaryPage() {
           <img
             src={`${import.meta.env.VITE_IMAGE_URL}/${image}`}
             alt="Image"
-            className="aspect-3/4 w-24 object-cover rounded-md"
+            className="w-24 object-cover rounded-md"
           />
         );
       },
@@ -86,10 +87,10 @@ export default function FieldAttendanceSummaryPage() {
   ];
 
   useEffect(() => {
-    if (users.length > 0) {
-      setSelectedUserId(String(users[0].user.id));
+    if (fieldUsers.length > 0) {
+      setSelectedUserId(String(fieldUsers[0].user.id));
     }
-  }, [users]);
+  }, [fieldUsers]);
 
   return (
     <div className="flex flex-1 flex-col gap-4">

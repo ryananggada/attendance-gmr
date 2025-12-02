@@ -23,7 +23,7 @@ export const login = async (req: Request, res: Response) => {
     .innerJoin(department, eq(department.id, user.departmentId));
 
   if (!selectedUser) {
-    return res.status(401).json({ message: 'Username or password is wrong!' });
+    return res.status(401).json({ message: 'Username atau password salah!' });
   }
 
   const isCorrectPass = await bcrypt.compare(
@@ -31,7 +31,7 @@ export const login = async (req: Request, res: Response) => {
     selectedUser.user.password,
   );
   if (!isCorrectPass) {
-    return res.status(401).json({ message: 'Username or password is wrong!' });
+    return res.status(401).json({ message: 'Username atau password salah!' });
   }
 
   const sessionToken = generateRandomSessionToken();
@@ -67,7 +67,7 @@ export const refresh = async (req: Request, res: Response) => {
   const cookies = req.cookies;
 
   if (!cookies?.session) {
-    return res.status(401).json({ message: 'Session token is missing.' });
+    return res.status(401).json({ message: 'Token sesi hilang' });
   }
 
   const sessionId = fromSessionTokenToSessionId(cookies.session);
@@ -77,13 +77,13 @@ export const refresh = async (req: Request, res: Response) => {
     .where(eq(session.id, sessionId));
 
   if (!result) {
-    return res.status(401).json({ message: 'Session not found.' });
+    return res.status(401).json({ message: 'Sesi tidak ditemukan' });
   }
 
   if (Date.now() >= result.expiresAt.getTime()) {
     await db.delete(session).where(eq(session.id, sessionId));
 
-    return res.status(401).json({ message: 'Session expired.' });
+    return res.status(401).json({ message: 'Sesi kedaluarsa' });
   }
 
   const [selectedUser] = await db
@@ -113,5 +113,5 @@ export const logout = async (req: Request, res: Response) => {
   await db.delete(session).where(eq(session.id, sessionId));
 
   res.clearCookie('session', { httpOnly: true, secure: true, sameSite: 'lax' });
-  res.json({ message: 'Logout successful.' });
+  res.json({ message: 'Logout berhasil' });
 };

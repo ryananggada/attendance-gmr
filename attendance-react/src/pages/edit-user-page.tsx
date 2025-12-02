@@ -26,18 +26,21 @@ import z from 'zod';
 
 const passwordFormSchema = z
   .object({
-    password: z.string().min(1, 'Password is required'),
-    confirmPassword: z.string().min(1, 'Need to confirm password'),
+    password: z
+      .string()
+      .min(1, 'Password dibutuhkan')
+      .min(8, 'Password harus 8 karakter atau lebih'),
+    confirmPassword: z.string().min(1, 'Confirm password dibutuhkan'),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
+    message: 'Confirm password harus sama password',
     path: ['confirmPassword'],
   });
 
 const editUserFormSchema = z.object({
-  fullName: z.string().min(1, 'Fullname is required'),
-  departmentId: z.string().min(1, 'Department must be selected'),
-  role: z.enum(['User', 'Admin']),
+  fullName: z.string().min(1, 'Nama dibutuhkan'),
+  departmentId: z.string().min(1, 'Department harus dipilih'),
+  role: z.enum(['User', 'Admin'], 'Role harus dipilih'),
 });
 
 export default function EditUserPage() {
@@ -116,7 +119,7 @@ export default function EditUserPage() {
   };
 
   useEffect(() => {
-    if (user && departments) {
+    if (user && departments?.length) {
       editUserForm.reset({
         fullName: user.fullName,
         departmentId: String(user.departmentId),
@@ -156,10 +159,10 @@ export default function EditUserPage() {
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor={field.name}>Department</FieldLabel>
                 <Select
-                  name={field.name}
-                  onValueChange={(value) => field.onChange(Number(value))}
-                  value={field.value ? String(field.value) : ''}
-                  disabled={!departments || departments.length === 0}
+                  key={editUserForm.watch('departmentId')}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  disabled={!departments}
                 >
                   <SelectTrigger
                     id={field.name}
@@ -195,6 +198,7 @@ export default function EditUserPage() {
               <Field>
                 <FieldLabel>Role</FieldLabel>
                 <Select
+                  key={editUserForm.watch('role')}
                   value={field.value}
                   onValueChange={(value) => field.onChange(value)}
                 >

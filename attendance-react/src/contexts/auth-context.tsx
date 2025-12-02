@@ -38,13 +38,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     if (!response.ok) {
-      toast.error('Username or password is wrong.');
+      toast.error('Username atau password salah!');
       return;
     }
 
     const { user } = await response.json();
     setUser(user);
-    toast.success('Login successful.');
+    toast.success('Login berhasil!');
   };
 
   const logout = async () => {
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     });
 
     setUser(null);
-    toast.success('Logout successful.');
+    toast.success('Logout berhasil!');
   };
 
   const refresh = async () => {
@@ -100,7 +100,7 @@ export const useAuth = () => {
   const ctx = useContext(AuthContext);
 
   if (!ctx) {
-    throw new Error('useAuth must be used inside AuthProvider.');
+    throw new Error('useAuth must be used inside AuthProvider');
   }
 
   return ctx;

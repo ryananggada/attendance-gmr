@@ -26,13 +26,16 @@ const formSchema = z
   .object({
     username: z.string().min(1, 'Username is required'),
     fullName: z.string().min(1, 'Fullname is required'),
-    password: z.string().min(1, 'Password is required'),
-    confirmPassword: z.string().min(1, 'Need to confirm password'),
+    password: z
+      .string()
+      .min(1, 'Password dibutuhkan')
+      .min(8, 'Password harus 8 karakter atau lebih'),
+    confirmPassword: z.string().min(1, 'Confirm password dibutuhkan'),
     departmentId: z.number('Department must be selected'),
     role: z.enum(['User', 'Admin'], 'Role must be selected'),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: 'Passwords do not match',
+    message: 'Confirm password harus sama password',
     path: ['confirmPassword'],
   });
 
@@ -51,7 +54,7 @@ export default function AddUserPage() {
     },
     onError: (error) => {
       toast.error(error.message);
-    }
+    },
   });
 
   const form = useForm<z.infer<typeof formSchema>>({

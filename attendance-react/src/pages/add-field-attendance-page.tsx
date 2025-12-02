@@ -21,10 +21,10 @@ import z from 'zod';
 
 const formSchema = z.object({
   image: z
-    .instanceof(File, { message: 'Please upload an image' })
-    .refine((file) => file.size > 0, 'Image cannot be empty'),
-  customer: z.string().min(1, 'Customer is required'),
-  personInCharge: z.string().min(1, 'Person in Charge is required'),
+    .instanceof(File, { message: 'Mohon upload gambar' })
+    .refine((file) => file.size > 0, 'Gambar tidak bisa kosong'),
+  customer: z.string().min(1, 'Customer dibutuhkan'),
+  personInCharge: z.string().min(1, 'Person in Charge dibutuhkan'),
   remarks: z.string().optional().default(''),
 });
 
@@ -85,11 +85,15 @@ export default function AddFieldAttendancePage() {
   return (
     <form onSubmit={form.handleSubmit(onSubmit)}>
       <FieldGroup>
-        <img
-          src={URL.createObjectURL(form.watch('image'))}
-          alt="Preview"
-          className="mt-2 aspect-3/4 w-48 object-cover rounded-md"
-        />
+        {form.watch('image') ? (
+          <img
+            src={URL.createObjectURL(form.watch('image'))}
+            alt="Preview"
+            className="mt-2 w-48 object-cover rounded-md"
+          />
+        ) : (
+          <></>
+        )}
 
         <Controller
           name="image"
