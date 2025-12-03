@@ -15,7 +15,7 @@ import {
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
 import { getDepartments } from '@/services/department-service';
-import { getUser, updatePassword, updateUser } from '@/services/user-service';
+import { getUserById, updatePassword, updateUser } from '@/services/user-service';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
@@ -48,7 +48,7 @@ export default function EditUserPage() {
   const navigate = useNavigate();
   const { data: user } = useQuery({
     queryKey: ['user', id],
-    queryFn: () => getUser(Number(id)),
+    queryFn: () => getUserById(Number(id)),
   });
   const { data: departments } = useQuery({
     queryKey: ['departments'],

@@ -44,7 +44,7 @@ export const getUsers = async () => {
   return response.json();
 };
 
-export const getUser = async (id: number) => {
+export const getUserById = async (id: number) => {
   const response = await fetch(`${import.meta.env.VITE_NODE_URL}/users/${id}`, {
     method: 'GET',
     credentials: 'include',

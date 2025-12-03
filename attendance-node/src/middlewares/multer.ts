@@ -9,7 +9,7 @@ const upload = multer({
   fileFilter: (_req, file, cb) => {
     const allowed = ['image/jpeg', 'image/png'];
     if (allowed.includes(file.mimetype)) cb(null, true);
-    else cb(new Error('Invalid file format'));
+    else cb(new Error('Format gambar tidak valid'));
   },
   limits: { fileSize: 5 * 1024 * 1024 },
 });

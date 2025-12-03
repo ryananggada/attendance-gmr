@@ -22,41 +22,11 @@ export const validate =
 
     if (!result.success) {
       return res.status(400).json({
-        message: 'Validasi gagal.',
+        message: 'Validasi gagal',
         errors: z.treeifyError(result.error),
       });
     }
 
     req.body = result.data;
     next();
-
-    /*
-    let parsedBody = { ...req.body };
-
-    for (const key in parsedBody) {
-      const value = parsedBody[key];
-      if (typeof value === 'string') {
-        try {
-          parsedBody[key] = JSON.parse(value);
-        } catch {}
-      }
-    }
-
-    if (req.file) {
-      parsedBody.image = req.file;
-    }
-  
-
-    const result = schema.safeParse(parsedBody);
-
-    if (!result.success) {
-      return res.status(400).json({
-        message: 'Validation failed',
-        errors: z.treeifyError(result.error),
-      });
-    }
-
-    req.body = result.data;
-    next();
-    */
   };

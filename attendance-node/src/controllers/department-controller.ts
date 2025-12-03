@@ -32,8 +32,9 @@ export const getDepartmentById = async (req: Request, res: Response) => {
     .where(eq(department.id, Number(id)));
 
   if (!selectedDepartment) {
-    return res.status(404).json({ message: 'Department not found.' });
+    return res.status(404).json({ message: 'Department tidak ditemukan' });
   }
+
   res.json(selectedDepartment);
 };
 
@@ -48,7 +49,8 @@ export const updateDepartment = async (req: Request, res: Response) => {
     .returning();
 
   if (!updatedDepartment) {
-    return res.status(404).json({ message: 'Department not found.' });
+    return res.status(404).json({ message: 'Department tidak ditemukan' });
   }
+
   res.json(updatedDepartment);
 };
