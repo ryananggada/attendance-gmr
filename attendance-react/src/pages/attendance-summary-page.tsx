@@ -8,6 +8,8 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useReverseGeocode } from '@/hooks/use-reverse-geocode';
 import { haversineDistance } from '@/lib/distance';
@@ -24,6 +26,16 @@ type EventDetail = {
   image: string;
 };
 
+type AbsentRow = {
+  name: string;
+  date: string;
+  time: string;
+  type: string;
+  remarks: string;
+}
+
+type RawLeave = Omit<AbsentRow, "name" | "date">;
+
 type RawAttendanceData = {
   user: { fullName: string };
   attendance: {
@@ -33,6 +45,8 @@ type RawAttendanceData = {
   checkEvent: [
     { type: string; time: string; location: [number, number]; image: string },
   ];
+  leave: RawLeave | null;
+  earlyLeave: RawLeave | null;
 };
 
 type AttendanceRow = {
@@ -54,6 +68,7 @@ export default function AttendanceSummaryPage() {
     year: new Date().getFullYear(),
   });
   const [activeDateTab, setActiveDateTab] = useState<'day' | 'month'>('day');
+  const [isAbsent, setIsAbsent] = useState<boolean>(false);
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
 
   const { data: attendances, isLoading } = useQuery({
@@ -72,95 +87,163 @@ export default function AttendanceSummaryPage() {
     selectedEvent?.location?.[1] ?? null,
   );
 
-  const columns = useMemo<ColumnDef<AttendanceRow>[]>(() => {
-    const base: ColumnDef<AttendanceRow>[] = [
-      {
-        header: 'Nama',
-        accessorKey: 'name',
+  const attendanceColumns: ColumnDef<AttendanceRow>[] = [
+    {
+      header: 'Nama',
+      accessorKey: 'name',
+    },
+    {
+      header: 'Check In',
+      cell: ({ row }) => {
+        const event = row.original.events.CheckIn;
+        return (
+          <Button
+            className="p-0 text-black"
+            variant="link"
+            disabled={!event}
+            onClick={() => setSelectedEvent(event ?? null)}
+          >
+            {event ? event.time : '-'}
+          </Button>
+        );
       },
-      {
-        header: 'Check In',
-        cell: ({ row }) => {
-          const event = row.original.events.CheckIn;
-          return (
-            <Button
-              className="p-0 text-black"
-              variant="link"
-              disabled={!event}
-              onClick={() => setSelectedEvent(event ?? null)}
-            >
-              {event ? event.time : '-'}
-            </Button>
-          );
-        },
+    },
+    {
+      header: 'Field',
+      cell: ({ row }) => {
+        const event = row.original.events.FieldCheckIn;
+        return (
+          <Button
+            className="p-0 text-black"
+            variant="link"
+            disabled={!event}
+            onClick={() => setSelectedEvent(event ?? null)}
+          >
+            {event ? event.time : '-'}
+          </Button>
+        );
       },
-      {
-        header: 'Field',
-        cell: ({ row }) => {
-          const event = row.original.events.FieldCheckIn;
-          return (
-            <Button
-              className="p-0 text-black"
-              variant="link"
-              disabled={!event}
-              onClick={() => setSelectedEvent(event ?? null)}
-            >
-              {event ? event.time : '-'}
-            </Button>
-          );
-        },
+    },
+    {
+      header: 'Return',
+      cell: ({ row }) => {
+        const event = row.original.events.FieldCheckOut;
+        return (
+          <Button
+            className="p-0 text-black"
+            variant="link"
+            disabled={!event}
+            onClick={() => setSelectedEvent(event ?? null)}
+          >
+            {event ? event.time : '-'}
+          </Button>
+        );
       },
-      {
-        header: 'Return',
-        cell: ({ row }) => {
-          const event = row.original.events.FieldCheckOut;
-          return (
-            <Button
-              className="p-0 text-black"
-              variant="link"
-              disabled={!event}
-              onClick={() => setSelectedEvent(event ?? null)}
-            >
-              {event ? event.time : '-'}
-            </Button>
-          );
-        },
+    },
+    {
+      header: 'Check Out',
+      cell: ({ row }) => {
+        const event = row.original.events.CheckOut;
+        return (
+          <Button
+            className="p-0 text-black"
+            variant="link"
+            disabled={!event}
+            onClick={() => setSelectedEvent(event ?? null)}
+          >
+            {event ? event.time : '-'}
+          </Button>
+        );
       },
-      {
-        header: 'Check Out',
-        cell: ({ row }) => {
-          const event = row.original.events.CheckOut;
-          return (
-            <Button
-              className="p-0 text-black"
-              variant="link"
-              disabled={!event}
-              onClick={() => setSelectedEvent(event ?? null)}
-            >
-              {event ? event.time : '-'}
-            </Button>
-          );
-        },
-      },
-    ];
+    },
+  ];
 
-    if (activeDateTab === 'month') {
+  const absentColumns: ColumnDef<AbsentRow>[] = [
+    {
+      header: "Nama",
+      accessorKey: "name",
+    },
+    {
+      header: "Tanggal",
+      accessorKey: "date",
+      cell: ({ row }) => format(new Date(row.original.date), "dd/MM/yyyy"),
+    },
+    {
+      header: "Waktu",
+      accessorKey: "time",
+    },
+    {
+      header: "Alasan",
+      accessorKey: "type",
+    },
+    {
+      header: "Keterangan",
+      accessorKey: "remarks",
+    },
+  ];
+
+  const columns: ColumnDef<AttendanceRow>[] | ColumnDef<AbsentRow>[] = useMemo(() => {
+    if (isAbsent) {
+      return absentColumns;
+    }
+
+    const base = [...attendanceColumns];
+
+    if (activeDateTab === "month") {
       base.splice(1, 0, {
-        accessorKey: 'date',
-        header: 'Tanggal',
-        cell: ({ row }) => {
-          const date = row.original.date;
-          return format(new Date(date), 'dd/MM/yyyy');
-        },
+        accessorKey: "date",
+        header: "Tanggal",
+        cell: ({ row }) =>
+          format(new Date(row.original.date), "dd/MM/yyyy"),
       });
     }
 
     return base;
-  }, [activeDateTab]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAbsent, activeDateTab]);  
 
   const rows = useMemo(() => {
     if (!attendances) return [];
 
+    if (isAbsent) {
+      const absents = attendances
+        .filter((item: RawAttendanceData) => item.leave !== null || item.earlyLeave !== null)
+        .map((item: RawAttendanceData) => {
+          const absent = item.leave || item.earlyLeave;
+
+          let type = absent?.type;
+
+          switch (type) {
+            case ('Sick'):
+              type = 'Sakit';
+              break;
+            case ('Leave'):
+              type = 'Cuti';
+              break;
+            case ('Time') :
+              type = 'Waktu Kerja';
+              break;
+            case ('Early') :
+              type = 'Pulang Awal';
+              break;
+            default:
+              type = '';
+              break;  
+          }
+
+          return {
+            id: item.attendance.id,
+            name: item.user.fullName,
+            date: item.attendance.date,
+            time: absent!.time,
+            type,
+            remarks: absent?.remarks ?? "",
+          };
+        });
+
+      return absents;
+    }
+    
     return attendances.map((a: RawAttendanceData) => {
       const events = {
         CheckIn: a.checkEvent.find((e: EventDetail) => e.type === 'CheckIn'),
@@ -180,7 +263,7 @@ export default function AttendanceSummaryPage() {
         events,
       };
     });
-  }, [attendances]);
+  }, [attendances, isAbsent]);
 
   const renderDialogTitle = (type: string) => {
     switch (type) {
@@ -216,6 +299,11 @@ export default function AttendanceSummaryPage() {
           <MonthYearPicker value={monthDate} onChange={setMonthDate} />
         </TabsContent>
       </Tabs>
+
+      <div className='flex gap-2'>
+        <Switch id="absent" checked={isAbsent} onCheckedChange={setIsAbsent} />
+        <Label htmlFor="absent">Filter ke tidak hadir / izin</Label>
+      </div>
 
       <Dialog
         open={!!selectedEvent}
@@ -260,7 +348,7 @@ export default function AttendanceSummaryPage() {
         )}
       </Dialog>
 
-      <DataTable columns={columns} data={rows} isLoading={isLoading} />
+      <DataTable columns={columns as never} data={rows} isLoading={isLoading} />
     </div>
   );
 }
