@@ -9,7 +9,7 @@ export const createFieldAttendance = async ({
   location,
 }: {
   userId: number;
-  date: Date;
+  date: string;
   customer: string;
   personInCharge: string;
   remarks: string | null;
@@ -19,10 +19,7 @@ export const createFieldAttendance = async ({
 }) => {
   const formData = new FormData();
   formData.append('userId', String(userId));
-  formData.append(
-    'date',
-    date instanceof Date ? date.toISOString() : String(date),
-  );
+  formData.append('date', String(date));
   formData.append('customer', customer);
   formData.append('personInCharge', personInCharge);
   if (remarks) {

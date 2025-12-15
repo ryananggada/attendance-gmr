@@ -1,4 +1,13 @@
+import Camera from '@/components/camera';
+import { Alert, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import {
   Field,
   FieldError,
@@ -6,6 +15,7 @@ import {
   FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
+import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/auth-context';
 import { useGeolocation } from '@/hooks/use-geolocation';
@@ -13,25 +23,33 @@ import { usePermissions } from '@/hooks/use-permissions';
 import { createFieldAttendance } from '@/services/field-attendance-service';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { format } from 'date-fns';
+import { AlertCircleIcon } from 'lucide-react';
+import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import z from 'zod';
 
 const formSchema = z.object({
-  image: z
-    .instanceof(File, { message: 'Mohon upload gambar' })
-    .refine((file) => file.size > 0, 'Gambar tidak bisa kosong'),
   customer: z.string().min(1, 'Customer dibutuhkan'),
   personInCharge: z.string().min(1, 'Person in Charge dibutuhkan'),
   remarks: z.string().optional().default(''),
 });
 
 export default function AddFieldAttendancePage() {
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [openDialog, setOpenDialog] = useState(false);
   const { user } = useAuth();
   const { getLocation } = useGeolocation();
-  const { locationStatus, requestLocation } = usePermissions();
+  const {
+    isLoading: isPermissionsLoading,
+    isGranted,
+    cameraStatus,
+    locationStatus,
+    requestCamera,
+    requestLocation,
+  } = usePermissions();
   const navigate = useNavigate();
   const mutation = useMutation({
     mutationFn: createFieldAttendance,
@@ -47,7 +65,6 @@ export default function AddFieldAttendancePage() {
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      image: undefined,
       customer: '',
       personInCharge: '',
       remarks: '',
@@ -55,67 +72,47 @@ export default function AddFieldAttendancePage() {
   });
 
   const onSubmit = async ({
-    image,
     customer,
     personInCharge,
     remarks,
   }: z.infer<typeof formSchema>) => {
+    const response = await fetch(capturedImage!);
+    const blob = await response.blob();
+    const file = new File([blob], `attendance-${Date.now()}.jpg`, {
+      type: 'image/jpeg',
+    });
+
     const coords = await getLocation();
+
+    const currentDate = format(new Date(), 'yyyy-MM-dd');
+    const currentTime = format(new Date(), 'HH:mm:ss');
 
     mutation.mutate({
       userId: user!.id,
-      date: new Date(),
+      date: currentDate,
       customer,
       personInCharge,
-      image,
+      image: file,
       remarks: remarks ?? null,
-      time: new Date().toLocaleTimeString('en-GB'),
+      time: currentTime,
       location: coords,
     });
   };
 
   useEffect(() => {
+    if (cameraStatus !== 'granted') {
+      requestCamera();
+    }
+
     if (locationStatus !== 'granted') {
       requestLocation();
     }
-
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [locationStatus]);
+  }, [cameraStatus, locationStatus]);
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)}>
       <FieldGroup>
-        {form.watch('image') ? (
-          <img
-            src={URL.createObjectURL(form.watch('image'))}
-            alt="Preview"
-            className="mt-2 w-48 object-cover rounded-md"
-          />
-        ) : (
-          <></>
-        )}
-
-        <Controller
-          name="image"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Gambar</FieldLabel>
-              <Input
-                id={field.name}
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0] || null;
-                  field.onChange(file);
-                }}
-                aria-invalid={fieldState.invalid}
-              />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
-
         <Controller
           name="customer"
           control={form.control}
@@ -159,11 +156,58 @@ export default function AddFieldAttendancePage() {
           )}
         />
 
-        <Field orientation="horizontal">
-          <Button type="submit" className="max-w-[256px]">
-            Tambah Lapangan
-          </Button>
-        </Field>
+        {isPermissionsLoading ? (
+          <Spinner className="mx-auto size-12" />
+        ) : isGranted ? (
+          <>
+            <Dialog
+              open={openDialog}
+              onOpenChange={(isOpen) => {
+                setOpenDialog(isOpen);
+
+                if (!isOpen) {
+                  setCapturedImage('');
+                }
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button className="mx-auto min-w-[156px]">Ambil foto</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Ambil foto</DialogTitle>
+                </DialogHeader>
+
+                {!capturedImage && (
+                  <Camera setCapturedImage={setCapturedImage} />
+                )}
+                {capturedImage && (
+                  <>
+                    <div className="w-full max-w-md mx-auto">
+                      <div className="aspect-[3/4] bg-black rounded overflow-hidden">
+                        <img
+                          src={capturedImage}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+
+                    <Button type="submit" className="mt-4">
+                      Tambah Lapangan
+                    </Button>
+                  </>
+                )}
+              </DialogContent>
+            </Dialog>
+          </>
+        ) : (
+          <Alert variant="destructive">
+            <AlertCircleIcon />
+            <AlertTitle>
+              Mohon nyalain izin lokasi dan kamera di perangkat anda.
+            </AlertTitle>
+          </Alert>
+        )}
       </FieldGroup>
     </form>
   );
