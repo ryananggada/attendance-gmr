@@ -29,6 +29,11 @@ export const createUser = async ({
     }),
   });
 
+  if (!response.ok) {
+    const errorBody = await response.json();
+    throw new Error(errorBody.message);
+  }
+
   return response.json();
 };
 
@@ -76,6 +81,11 @@ export const updateUser = async ({
     body: JSON.stringify({ fullName, departmentId, role }),
   });
 
+  if (!response.ok) {
+    const errorBody = await response.json();
+    throw new Error(errorBody.message);
+  }
+
   return response.json();
 };
 
@@ -96,6 +106,11 @@ export const updatePassword = async ({
     },
     body: JSON.stringify({ password, confirmPassword }),
   });
+
+  if (!response.ok) {
+    const errorBody = await response.json();
+    throw new Error(errorBody.message);
+  }
 
   return response.json();
 };

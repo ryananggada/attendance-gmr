@@ -14,8 +14,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/contexts/auth-context';
 import { getDepartments } from '@/services/department-service';
-import { getUserById, updatePassword, updateUser } from '@/services/user-service';
+import {
+  getUserById,
+  updatePassword,
+  updateUser,
+} from '@/services/user-service';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useEffect } from 'react';
@@ -45,6 +50,7 @@ const editUserFormSchema = z.object({
 
 export default function EditUserPage() {
   const { id } = useParams();
+  const { user: currentUser } = useAuth();
   const navigate = useNavigate();
   const { data: user } = useQuery({
     queryKey: ['user', id],
@@ -128,6 +134,10 @@ export default function EditUserPage() {
     }
   }, [user, departments, editUserForm]);
 
+  if (currentUser!.id === Number(id)) {
+    navigate('/users');
+  }
+
   return (
     <div className="flex flex-1 flex-col gap-4">
       <h2 className="text-2xl font-bold">Ubah Informasi User</h2>
@@ -159,6 +169,7 @@ export default function EditUserPage() {
               <Field data-invalid={fieldState.invalid}>
                 <FieldLabel htmlFor={field.name}>Department</FieldLabel>
                 <Select
+                  name={field.name}
                   key={editUserForm.watch('departmentId')}
                   value={field.value}
                   onValueChange={field.onChange}

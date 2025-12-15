@@ -296,10 +296,6 @@ export default function AttendancePage() {
       return setAttendanceType('Leave');
     }
 
-    if (earlyLeave) {
-      return setAttendanceType('EarlyLeave');
-    }
-
     const has = (t: string) =>
       events.some((e: { type: string }) => e.type === t);
 
@@ -353,7 +349,7 @@ export default function AttendancePage() {
                 disabled={
                   !(
                     cameraStatus === 'granted' && locationStatus === 'granted'
-                  ) || ['Done', 'Leave', 'EarlyLeave'].includes(attendanceType)
+                  ) || ['Done', 'Leave'].includes(attendanceType)
                 }
               >
                 Absen
@@ -434,7 +430,7 @@ export default function AttendancePage() {
               >
                 <DialogTrigger asChild>
                   <Button
-                    disabled={['EarlyLeave', 'Done'].includes(attendanceType)}
+                    disabled={['Done'].includes(attendanceType) || !!earlyLeave}
                     variant="secondary"
                     className="min-w-[156px]"
                   >

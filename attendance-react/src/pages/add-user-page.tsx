@@ -24,15 +24,15 @@ import z from 'zod';
 
 const formSchema = z
   .object({
-    username: z.string().min(1, 'Username is required'),
-    fullName: z.string().min(1, 'Fullname is required'),
+    username: z.string().min(1, 'Username dibutuhkan'),
+    fullName: z.string().min(1, 'Fullname dibutuhkan'),
     password: z
       .string()
       .min(1, 'Password dibutuhkan')
       .min(8, 'Password harus 8 karakter atau lebih'),
     confirmPassword: z.string().min(1, 'Confirm password dibutuhkan'),
-    departmentId: z.number('Department must be selected'),
-    role: z.enum(['User', 'Admin'], 'Role must be selected'),
+    departmentId: z.number('Department harus dipilih'),
+    role: z.enum(['User', 'Admin'], 'Role harus dipilih'),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: 'Confirm password harus sama password',
@@ -164,9 +164,9 @@ export default function AddUserPage() {
               <FieldLabel htmlFor={field.name}>Department</FieldLabel>
               <Select
                 name={field.name}
-                onValueChange={(value) => field.onChange(Number(value))}
                 value={field.value ? String(field.value) : ''}
-                disabled={!departments || departments.length === 0}
+                onValueChange={(value) => field.onChange(Number(value))}
+                disabled={!departments?.length}
               >
                 <SelectTrigger
                   id={field.name}
@@ -196,14 +196,15 @@ export default function AddUserPage() {
         <Controller
           name="role"
           control={form.control}
-          render={({ field }) => (
-            <Field>
-              <FieldLabel>Role</FieldLabel>
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor={field.name}>Role</FieldLabel>
               <Select
-                onValueChange={(value) => field.onChange(value)}
-                {...field}
+                name={field.name}
+                value={field.value}
+                onValueChange={field.onChange}
               >
-                <SelectTrigger>
+                <SelectTrigger aria-invalid={fieldState.invalid}>
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
 
@@ -212,6 +213,8 @@ export default function AddUserPage() {
                   <SelectItem value="Admin">Admin</SelectItem>
                 </SelectContent>
               </Select>
+
+              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
           )}
         />

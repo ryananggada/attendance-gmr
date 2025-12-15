@@ -5,6 +5,7 @@ type AuthContextType = {
   user: {
     id: number;
     username: string;
+    fullName: string;
     role: 'User' | 'Admin';
     department: { id: number; name: string; isField: boolean };
   } | null;
@@ -19,6 +20,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [user, setUser] = useState<{
     id: number;
     username: string;
+    fullName: string;
     role: 'User' | 'Admin';
     department: { id: number; name: string; isField: boolean };
   } | null>(null);
@@ -38,26 +40,31 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
 
     if (!response.ok) {
-      toast.error('Username atau password salah!');
+      const errorBody = await response.json();
+      toast.error(errorBody.message);
       return;
     }
 
-    const { user } = await response.json();
+    const { user, message } = await response.json();
     setUser(user);
-    toast.success('Login berhasil!');
+    toast.success(message);
   };
 
   const logout = async () => {
-    await fetch(`${import.meta.env.VITE_NODE_URL}/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
+    const response = await fetch(
+      `${import.meta.env.VITE_NODE_URL}/auth/logout`,
+      {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+        },
       },
-    });
+    );
 
     setUser(null);
-    toast.success('Logout berhasil!');
+    const { message } = await response.json();
+    toast.success(message);
   };
 
   const refresh = async () => {

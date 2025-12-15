@@ -29,7 +29,7 @@ export const requireSession = async (req: Request, res: Response, next: NextFunc
     }
   
     req.session = result;
-    req.userId = result.userId;
+    // req.userId = result.userId;
 
     next();
   } catch (error) {

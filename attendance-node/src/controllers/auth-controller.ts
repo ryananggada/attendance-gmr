@@ -53,9 +53,11 @@ export const login = async (req: Request, res: Response) => {
   });
 
   res.json({
+    message: 'Login berhasil!',
     user: {
       id: selectedUser!.user.id,
       username: selectedUser!.user.username,
+      fullName: selectedUser!.user.fullName,
       role: selectedUser!.user.role,
       department: selectedUser!.department,
     },
@@ -96,6 +98,7 @@ export const refresh = async (req: Request, res: Response) => {
     user: {
       id: selectedUser!.user.id,
       username: selectedUser!.user.username,
+      fullName: selectedUser!.user.fullName,
       role: selectedUser!.user.role,
       department: selectedUser!.department,
     },

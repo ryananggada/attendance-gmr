@@ -6,6 +6,7 @@ import { Link } from 'react-router';
 import type { ColumnDef } from '@tanstack/react-table';
 import { DataTable } from '@/components/ui/data-table';
 import { format } from 'date-fns';
+import { useReverseGeocode } from '@/hooks/use-reverse-geocode';
 
 type FieldAttendance = {
   id: number;
@@ -16,10 +17,35 @@ type FieldAttendance = {
   image: string;
 };
 
+type LocationCellProps = {
+  location: [number, number];
+};
+
+const LocationCell = ({ location }: LocationCellProps) => {
+  const { data, isLoading } = useReverseGeocode(location[0], location[1]);
+
+  return (
+    <div className="max-w-56 break-words whitespace-normal">
+      {isLoading ? 'Memuat...' : data}
+    </div>
+  );
+};
+
 const columns: ColumnDef<FieldAttendance>[] = [
   {
     accessorKey: 'time',
     header: 'Waktu',
+  },
+  {
+    accessorKey: 'location',
+    header: 'Lokasi',
+    cell: ({ getValue }) => {
+      const location = getValue<[number, number]>();
+
+      if (!location) return '-';
+
+      return <LocationCell location={location} />;
+    },
   },
   {
     accessorKey: 'customer',

@@ -16,7 +16,10 @@ export const createUser = async (req: Request, res: Response) => {
   const hashedPassword = bcrypt.hashSync(newUser.password, 12);
   newUser.password = hashedPassword;
 
-  const [inserted] = await db.insert(user).values(newUser).returning(userWithoutPassword);
+  const [inserted] = await db
+    .insert(user)
+    .values(newUser)
+    .returning(userWithoutPassword);
   res.status(201).json(inserted);
 };
 

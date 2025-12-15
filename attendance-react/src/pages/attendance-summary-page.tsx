@@ -32,9 +32,9 @@ type AbsentRow = {
   time: string;
   type: string;
   remarks: string;
-}
+};
 
-type RawLeave = Omit<AbsentRow, "name" | "date">;
+type RawLeave = Omit<AbsentRow, 'name' | 'date'>;
 
 type RawAttendanceData = {
   user: { fullName: string };
@@ -160,109 +160,126 @@ export default function AttendanceSummaryPage() {
 
   const absentColumns: ColumnDef<AbsentRow>[] = [
     {
-      header: "Nama",
-      accessorKey: "name",
+      header: 'Nama',
+      accessorKey: 'name',
     },
     {
-      header: "Tanggal",
-      accessorKey: "date",
-      cell: ({ row }) => format(new Date(row.original.date), "dd/MM/yyyy"),
+      header: 'Tanggal',
+      accessorKey: 'date',
+      cell: ({ row }) => format(new Date(row.original.date), 'dd/MM/yyyy'),
     },
     {
-      header: "Waktu",
-      accessorKey: "time",
+      header: 'Waktu',
+      accessorKey: 'time',
     },
     {
-      header: "Alasan",
-      accessorKey: "type",
+      header: 'Alasan',
+      accessorKey: 'type',
     },
     {
-      header: "Keterangan",
-      accessorKey: "remarks",
+      header: 'Keterangan',
+      accessorKey: 'remarks',
     },
   ];
 
-  const columns: ColumnDef<AttendanceRow>[] | ColumnDef<AbsentRow>[] = useMemo(() => {
-    if (isAbsent) {
-      return absentColumns;
-    }
+  const columns: ColumnDef<AttendanceRow>[] | ColumnDef<AbsentRow>[] =
+    useMemo(() => {
+      if (isAbsent) {
+        return absentColumns;
+      }
 
-    const base = [...attendanceColumns];
+      const base = [...attendanceColumns];
 
-    if (activeDateTab === "month") {
-      base.splice(1, 0, {
-        accessorKey: "date",
-        header: "Tanggal",
-        cell: ({ row }) =>
-          format(new Date(row.original.date), "dd/MM/yyyy"),
-      });
-    }
+      if (activeDateTab === 'month') {
+        base.splice(1, 0, {
+          accessorKey: 'date',
+          header: 'Tanggal',
+          cell: ({ row }) => format(new Date(row.original.date), 'dd/MM/yyyy'),
+        });
+      }
 
-    return base;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isAbsent, activeDateTab]);  
+      return base;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isAbsent, activeDateTab]);
+
+  const hasAttendanceEvent = (item: RawAttendanceData) =>
+    Array.isArray(item.checkEvent) && item.checkEvent.length > 0;
 
   const rows = useMemo(() => {
     if (!attendances) return [];
 
     if (isAbsent) {
-      const absents = attendances
-        .filter((item: RawAttendanceData) => item.leave !== null || item.earlyLeave !== null)
+      return attendances
+        .filter(
+          (item: { leave: null; earlyLeave: null }) =>
+            item.leave !== null || item.earlyLeave !== null,
+        )
         .map((item: RawAttendanceData) => {
-          const absent = item.leave || item.earlyLeave;
-
-          let type = absent?.type;
+          const absent = item.leave ?? item.earlyLeave!;
+          let type = absent.type;
 
           switch (type) {
-            case ('Sick'):
+            case 'Sick':
               type = 'Sakit';
               break;
-            case ('Leave'):
+            case 'Leave':
               type = 'Cuti';
               break;
-            case ('Time') :
+            case 'Time':
               type = 'Waktu Kerja';
               break;
-            case ('Early') :
+            case 'Early':
               type = 'Pulang Awal';
               break;
             default:
               type = '';
-              break;  
           }
 
           return {
             id: item.attendance.id,
             name: item.user.fullName,
             date: item.attendance.date,
-            time: absent!.time,
+            time: absent.time,
             type,
-            remarks: absent?.remarks ?? "",
+            remarks: absent.remarks ?? '',
           };
         });
-
-      return absents;
     }
-    
-    return attendances.map((a: RawAttendanceData) => {
-      const events = {
-        CheckIn: a.checkEvent.find((e: EventDetail) => e.type === 'CheckIn'),
-        FieldCheckIn: a.checkEvent.find(
-          (e: EventDetail) => e.type === 'FieldCheckIn',
-        ),
-        FieldCheckOut: a.checkEvent.find(
-          (e: EventDetail) => e.type === 'FieldCheckOut',
-        ),
-        CheckOut: a.checkEvent.find((e: EventDetail) => e.type === 'CheckOut'),
-      };
 
-      return {
-        id: a.attendance.id,
-        name: a.user.fullName,
-        date: a.attendance.date,
-        events,
-      };
-    });
+    return attendances
+      .filter(
+        (item: RawAttendanceData) =>
+          hasAttendanceEvent(item) && item.leave === null,
+      )
+      .map(
+        (a: {
+          checkEvent: any[];
+          attendance: { id: number; date: string };
+          user: { fullName: string };
+        }) => {
+          const events = {
+            CheckIn: a.checkEvent.find(
+              (e: { type: string }) => e.type === 'CheckIn',
+            ),
+            FieldCheckIn: a.checkEvent.find(
+              (e: { type: string }) => e.type === 'FieldCheckIn',
+            ),
+            FieldCheckOut: a.checkEvent.find(
+              (e: { type: string }) => e.type === 'FieldCheckOut',
+            ),
+            CheckOut: a.checkEvent.find(
+              (e: { type: string }) => e.type === 'CheckOut',
+            ),
+          };
+
+          return {
+            id: a.attendance.id,
+            name: a.user.fullName,
+            date: a.attendance.date,
+            events,
+          };
+        },
+      );
   }, [attendances, isAbsent]);
 
   const renderDialogTitle = (type: string) => {
@@ -300,7 +317,7 @@ export default function AttendanceSummaryPage() {
         </TabsContent>
       </Tabs>
 
-      <div className='flex gap-2'>
+      <div className="flex gap-2">
         <Switch id="absent" checked={isAbsent} onCheckedChange={setIsAbsent} />
         <Label htmlFor="absent">Filter ke tidak hadir / izin</Label>
       </div>
@@ -340,7 +357,7 @@ export default function AttendanceSummaryPage() {
                   src={`${import.meta.env.VITE_IMAGE_URL}/${
                     selectedEvent.image
                   }`}
-                  className="w-full aspect-3/4 object-cover rounded"
+                  className="max-w-48 aspect-3/4 object-cover rounded mx-auto"
                 />
               </div>
             </DialogDescription>

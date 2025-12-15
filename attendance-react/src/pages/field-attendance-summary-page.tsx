@@ -8,6 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useReverseGeocode } from '@/hooks/use-reverse-geocode';
 import { getFieldAttendances } from '@/services/field-attendance-service';
 import { getUsers } from '@/services/user-service';
 import { useQuery } from '@tanstack/react-query';
@@ -22,6 +23,20 @@ type FieldAttendance = {
   personInCharge: string;
   remarks: string;
   image: string;
+};
+
+type LocationCellProps = {
+  location: [number, number];
+};
+
+const LocationCell = ({ location }: LocationCellProps) => {
+  const { data, isLoading } = useReverseGeocode(location[0], location[1]);
+
+  return (
+    <div className="max-w-56 break-words whitespace-normal">
+      {isLoading ? 'Memuat...' : data}
+    </div>
+  );
 };
 
 export default function FieldAttendanceSummaryPage() {
@@ -51,6 +66,17 @@ export default function FieldAttendanceSummaryPage() {
     {
       accessorKey: 'time',
       header: 'Waktu',
+    },
+    {
+      accessorKey: 'location',
+      header: 'Lokasi',
+      cell: ({ getValue }) => {
+        const location = getValue<[number, number]>();
+
+        if (!location) return '-';
+
+        return <LocationCell location={location} />;
+      },
     },
     {
       accessorKey: 'customer',
