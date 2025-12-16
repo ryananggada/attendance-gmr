@@ -1,6 +1,6 @@
 import { relations } from 'drizzle-orm';
 import { integer, pgEnum, pgTable, time, varchar } from 'drizzle-orm/pg-core';
-import { attendance } from './attendance-model.ts';
+import { attendance } from './attendance-model.js';
 
 export const leaveTypeEnum = pgEnum('leaveType', ['Sick', 'Leave']);
 

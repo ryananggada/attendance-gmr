@@ -4,7 +4,7 @@ import {
   getDepartmentById,
   getDepartments,
   updateDepartment,
-} from '../controllers/department-controller.ts';
+} from '../controllers/department-controller.js';
 
 const router = express.Router();
 

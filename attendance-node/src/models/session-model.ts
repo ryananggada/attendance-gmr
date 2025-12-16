@@ -1,6 +1,6 @@
 import { relations } from 'drizzle-orm';
 import { integer, pgTable, timestamp, varchar } from 'drizzle-orm/pg-core';
-import { user } from './user-model.ts';
+import { user } from './user-model.js';
 
 export const session = pgTable('session', {
   id: varchar().primaryKey().notNull(),

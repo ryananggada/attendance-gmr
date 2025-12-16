@@ -7,12 +7,12 @@ import express, {
 } from 'express';
 import path from 'path';
 import morgan from 'morgan';
-import userRoute from './routes/user-route.ts';
-import attendanceRoute from './routes/attendance-route.ts';
-import authRoute from './routes/auth-route.ts';
-import departmentRoute from './routes/department-route.ts';
-import fieldAttendanceRoute from './routes/field-attendance-route.ts';
-import { __dirname } from './utils/path.ts';
+import userRoute from './routes/user-route.js';
+import attendanceRoute from './routes/attendance-route.js';
+import authRoute from './routes/auth-route.js';
+import departmentRoute from './routes/department-route.js';
+import fieldAttendanceRoute from './routes/field-attendance-route.js';
+import { __dirname } from './utils/path.js';
 
 const app = express();
 app.use(express.json());

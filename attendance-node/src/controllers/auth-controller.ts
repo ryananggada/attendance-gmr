@@ -2,14 +2,14 @@ import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 import { eq } from 'drizzle-orm';
 import type { Request, Response } from 'express';
-import { user } from '../models/user-model.ts';
-import { db } from '../configs/db.ts';
+import { user } from '../models/user-model.js';
+import { db } from '../configs/db.js';
 import {
   generateRandomSessionToken,
   fromSessionTokenToSessionId,
-} from '../lib/session.ts';
-import { session } from '../models/session-model.ts';
-import { department } from '../models/department-model.ts';
+} from '../lib/session.js';
+import { session } from '../models/session-model.js';
+import { department } from '../models/department-model.js';
 
 dotenv.config();
 

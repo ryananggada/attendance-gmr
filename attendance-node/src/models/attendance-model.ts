@@ -1,9 +1,9 @@
 import { relations } from 'drizzle-orm';
 import { date, integer, pgTable } from 'drizzle-orm/pg-core';
-import { user } from './user-model.ts';
-import { checkEvent } from './check-event-model.ts';
-import { leave } from './leave-model.ts';
-import { earlyLeave } from './early-leave-model.ts';
+import { user } from './user-model.js';
+import { checkEvent } from './check-event-model.js';
+import { leave } from './leave-model.js';
+import { earlyLeave } from './early-leave-model.js';
 
 export const attendance = pgTable('attendance', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),

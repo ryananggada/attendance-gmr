@@ -1,11 +1,11 @@
 import { and, eq, getTableColumns, sql } from 'drizzle-orm';
 import type { Request, Response } from 'express';
-import { db } from '../configs/db.ts';
-import { attendance } from '../models/attendance-model.ts';
-import { checkEvent } from '../models/check-event-model.ts';
-import { user } from '../models/user-model.ts';
-import { leave } from '../models/leave-model.ts';
-import { earlyLeave } from '../models/early-leave-model.ts';
+import { db } from '../configs/db.js';
+import { attendance } from '../models/attendance-model.js';
+import { checkEvent } from '../models/check-event-model.js';
+import { user } from '../models/user-model.js';
+import { leave } from '../models/leave-model.js';
+import { earlyLeave } from '../models/early-leave-model.js';
 
 const userColumns = getTableColumns(user);
 const attendanceColumns = getTableColumns(attendance);
@@ -221,7 +221,9 @@ export const getAttendances = async (req: Request, res: Response) => {
 
   if (day) {
     if (typeof day !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(day)) {
-      return res.status(400).json({ message: 'Format hari tidak valid (YYYY-MM-DD)' });
+      return res
+        .status(400)
+        .json({ message: 'Format hari tidak valid (YYYY-MM-DD)' });
     }
 
     rows = await db
@@ -242,7 +244,9 @@ export const getAttendances = async (req: Request, res: Response) => {
 
   if (month) {
     if (typeof month !== 'string' || !/^\d{4}-\d{2}$/.test(month)) {
-      return res.status(400).json({ message: 'Format bulan tidak valid (YYYY-MM)' });
+      return res
+        .status(400)
+        .json({ message: 'Format bulan tidak valid (YYYY-MM)' });
     }
 
     const [year, mon] = month.split('-').map(Number);

@@ -1,9 +1,9 @@
 import { relations } from 'drizzle-orm';
 import { integer, pgEnum, pgTable, varchar } from 'drizzle-orm/pg-core';
-import { attendance } from './attendance-model.ts';
-import { session } from './session-model.ts';
-import { department } from './department-model.ts';
-import { fieldAttendance } from './field-attendance-model.ts';
+import { attendance } from './attendance-model.js';
+import { session } from './session-model.js';
+import { department } from './department-model.js';
+import { fieldAttendance } from './field-attendance-model.js';
 
 export const roleEnum = pgEnum('role', ['Admin', 'User']);
 

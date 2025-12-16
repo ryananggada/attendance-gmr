@@ -7,7 +7,7 @@ import {
   time,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { attendance } from './attendance-model.ts';
+import { attendance } from './attendance-model.js';
 
 export const typeEnum = pgEnum('type', [
   'CheckIn',

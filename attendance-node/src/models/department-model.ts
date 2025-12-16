@@ -1,6 +1,6 @@
 import { relations } from 'drizzle-orm';
 import { boolean, integer, pgTable, varchar } from 'drizzle-orm/pg-core';
-import { user } from './user-model.ts';
+import { user } from './user-model.js';
 
 export const department = pgTable('department', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),

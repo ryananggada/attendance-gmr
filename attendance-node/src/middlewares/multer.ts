@@ -1,8 +1,8 @@
 import multer from 'multer';
 import sharp from 'sharp';
 import path from 'path';
-import { ensureDir, generateFilename } from '../utils/file.ts';
-import { __dirname } from '../utils/path.ts';
+import { ensureDir, generateFilename } from '../utils/file.js';
+import { __dirname } from '../utils/path.js';
 
 const upload = multer({
   storage: multer.memoryStorage(),

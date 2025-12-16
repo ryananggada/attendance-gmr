@@ -1,7 +1,7 @@
 import type { Request, Response } from 'express';
 
-import { db } from '../configs/db.ts';
-import { department } from '../models/department-model.ts';
+import { db } from '../configs/db.js';
+import { department } from '../models/department-model.js';
 import { eq } from 'drizzle-orm';
 
 export const createDepartment = async (req: Request, res: Response) => {

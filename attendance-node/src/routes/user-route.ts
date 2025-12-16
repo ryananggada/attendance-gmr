@@ -4,9 +4,9 @@ import {
   getUserById,
   getUsers,
   updateUser,
-} from '../controllers/user-controller.ts';
-import { validate } from '../middlewares/validate.ts';
-import { createUserSchema } from '../validations/user-schema.ts';
+} from '../controllers/user-controller.js';
+import { validate } from '../middlewares/validate.js';
+import { createUserSchema } from '../validations/user-schema.js';
 
 const router = express.Router();
 

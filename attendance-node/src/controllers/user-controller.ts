@@ -2,9 +2,9 @@ import bcrypt from 'bcrypt';
 import { eq, getTableColumns } from 'drizzle-orm';
 import type { Request, Response } from 'express';
 
-import { user } from '../models/user-model.ts';
-import { db } from '../configs/db.ts';
-import { department } from '../models/department-model.ts';
+import { user } from '../models/user-model.js';
+import { db } from '../configs/db.js';
+import { department } from '../models/department-model.js';
 
 const userColumns = getTableColumns(user);
 const departmentColumns = getTableColumns(department);

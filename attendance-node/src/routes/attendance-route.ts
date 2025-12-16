@@ -8,14 +8,14 @@ import {
   getAttendances,
   getSingleAttendance,
   submitEarlyLeave,
-} from '../controllers/attendance-controller.ts';
-import { uploadAndCompress } from '../middlewares/multer.ts';
-import { validate } from '../middlewares/validate.ts';
+} from '../controllers/attendance-controller.js';
+import { uploadAndCompress } from '../middlewares/multer.js';
+import { validate } from '../middlewares/validate.js';
 import {
   createAttendanceSchema,
   leaveSchema,
   earlyLeaveSchema,
-} from '../validations/attendance-schema.ts';
+} from '../validations/attendance-schema.js';
 
 const router = express.Router();
 

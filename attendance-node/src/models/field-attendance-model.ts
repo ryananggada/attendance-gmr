@@ -8,7 +8,7 @@ import {
   time,
   varchar,
 } from 'drizzle-orm/pg-core';
-import { user } from './user-model.ts';
+import { user } from './user-model.js';
 
 export const fieldAttendance = pgTable('fieldAttendance', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),

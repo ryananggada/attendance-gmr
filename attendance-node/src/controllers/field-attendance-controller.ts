@@ -1,7 +1,7 @@
 import { and, eq } from 'drizzle-orm';
 import type { Request, Response } from 'express';
-import { fieldAttendance } from '../models/field-attendance-model.ts';
-import { db } from '../configs/db.ts';
+import { fieldAttendance } from '../models/field-attendance-model.js';
+import { db } from '../configs/db.js';
 
 export const createFieldAttendance = async (req: Request, res: Response) => {
   const newFieldAttendance = req.body;
