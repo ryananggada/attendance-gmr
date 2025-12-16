@@ -2,8 +2,8 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "NodeNext",
-    "rootDir": "src",
-    "outDir": "dist",
+    "rootDir": "./src",
+    "outDir": "./dist",
     "sourceMap": true,
     "moduleResolution": "NodeNext",
     "moduleDetection": "force",
@@ -17,8 +17,6 @@
     "resolveJsonModule": true,
     "declaration": true,
     "allowSyntheticDefaultImports": true,
-    "noEmit": true,
-    "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "lib": ["ES2022"],
     "typeRoots": ["./src/types", "./node_modules/@types"]
