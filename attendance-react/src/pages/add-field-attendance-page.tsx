@@ -6,7 +6,6 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Field,
@@ -54,6 +53,7 @@ export default function AddFieldAttendancePage() {
   const mutation = useMutation({
     mutationFn: createFieldAttendance,
     onSuccess: () => {
+      setOpenDialog(false);
       toast.success('Tambah lapangan kehadiran berhasil!');
       navigate('/field-attendance');
     },
@@ -170,9 +170,15 @@ export default function AddFieldAttendancePage() {
                 }
               }}
             >
-              <DialogTrigger asChild>
-                <Button className="mx-auto min-w-[156px]">Ambil foto</Button>
-              </DialogTrigger>
+              <Button type='button' className="mx-auto min-w-[156px]" onClick={async () => {
+                  const isValid = await form.trigger(['customer', 'personInCharge']);
+
+                  if (isValid) {
+                    setOpenDialog(true);
+                  }
+              }}>
+                Ambil foto
+              </Button>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Ambil foto</DialogTitle>
@@ -192,7 +198,12 @@ export default function AddFieldAttendancePage() {
                       </div>
                     </div>
 
-                    <Button type="submit" className="mt-4">
+                    <Button
+                      type="button"
+                      className="mt-4"
+                      onClick={form.handleSubmit(onSubmit)}
+                      disabled={!capturedImage}
+                    >
                       Tambah Lapangan
                     </Button>
                   </>
