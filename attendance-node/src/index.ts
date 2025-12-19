@@ -21,6 +21,7 @@ app.set('json spaces', 2);
 
 app.use(morgan('dev'));
 
+/*
 const allowedOrigins = [
   'http://localhost:5173',
   'https://tugasgi.id',
@@ -39,11 +40,16 @@ const corsOptions: CorsOptions = {
   },
   credentials: true,
 };
+*/
 
 const PORT = 8000;
 
+app.use(cors({ credentials: true }));
+
+/*
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
+*/
 app.use(cookieParser());
 
 app.get('/api', (_req, res) => {
