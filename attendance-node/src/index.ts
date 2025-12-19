@@ -44,13 +44,14 @@ const corsOptions: CorsOptions = {
 
 const PORT = 8000;
 
-app.use(cors({ credentials: true }));
+app.use(cors({ origin: true, credentials: true }));
 
 /*
 app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 */
 app.use(cookieParser());
+app.options('*', cors({ origin: true, credentials: true }));
 
 app.get('/api', (_req, res) => {
   res.send('Hello from Typescript Express!');
