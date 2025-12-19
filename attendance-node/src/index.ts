@@ -28,20 +28,22 @@ const allowedOrigins = [
 ];
 
 const corsOptions: CorsOptions = {
-  origin(origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'), false);
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
     }
+
+    return callback(null, false);
   },
   credentials: true,
-  optionsSuccessStatus: 200,
 };
 
 const PORT = 8000;
 
 app.use(cors(corsOptions));
+app.options('*', cors(corsOptions));
 app.use(cookieParser());
 
 app.get('/api', (_req, res) => {
