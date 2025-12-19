@@ -48,7 +48,7 @@ export const login = async (req: Request, res: Response) => {
   res.cookie('session', sessionToken, {
     httpOnly: true,
     secure: true,
-    sameSite: 'lax',
+    sameSite: 'none',
     maxAge: 1000 * 60 * 60 * 24,
   });
 
@@ -115,6 +115,10 @@ export const logout = async (req: Request, res: Response) => {
   const sessionId = fromSessionTokenToSessionId(cookies.session);
   await db.delete(session).where(eq(session.id, sessionId));
 
-  res.clearCookie('session', { httpOnly: true, secure: true, sameSite: 'lax' });
+  res.clearCookie('session', {
+    httpOnly: true,
+    secure: true,
+    sameSite: 'none',
+  });
   res.json({ message: 'Logout berhasil' });
 };
