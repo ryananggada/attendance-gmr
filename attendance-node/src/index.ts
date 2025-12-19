@@ -21,7 +21,7 @@ app.set('json spaces', 2);
 
 app.use(morgan('dev'));
 
-const allowedOrigins = ['http://localhost:5173'];
+const allowedOrigins = ['http://localhost:5173', 'https://tugasgi.id'];
 
 const corsOptions: CorsOptions = {
   origin(origin, callback) {
