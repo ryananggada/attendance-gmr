@@ -1,5 +1,5 @@
 import cookieParser from 'cookie-parser';
-import cors, { type CorsOptions } from 'cors';
+import cors from 'cors';
 import express, {
   type Request,
   type Response,
@@ -21,44 +21,39 @@ app.set('json spaces', 2);
 
 app.use(morgan('dev'));
 
-/*
 const allowedOrigins = [
   'http://localhost:5173',
   'https://tugasgi.id',
   'https://www.tugasgi.id',
 ];
 
-const corsOptions: CorsOptions = {
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
+app.use(
+  cors({
+    origin(origin, callback) {
+      if (!origin) return callback(null, true);
 
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
 
-    return callback(null, false);
-  },
-  credentials: true,
-};
-*/
+      return callback(new Error('CORS blocked'), false);
+    },
+    credentials: true,
+  }),
+);
+
+app.options('*', cors());
 
 const PORT = 8000;
 
-app.use(cors({ origin: true, credentials: true }));
-
-/*
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
-*/
 app.use(cookieParser());
-app.options('*', cors({ origin: true, credentials: true }));
-
-app.get('/api', (_req, res) => {
-  res.send('Hello from Typescript Express!');
-});
 
 app.listen(PORT, () => {
   console.log(`Server listening at http://localhost:${PORT}`);
+});
+
+app.get('/api', (_req, res) => {
+  res.send('Hello from Typescript Express!');
 });
 
 app.use('/api/auth', authRoute);
