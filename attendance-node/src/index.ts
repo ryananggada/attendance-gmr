@@ -16,13 +16,6 @@ import { __dirname } from './utils/path.js';
 
 const app = express();
 
-app.use((req, _res, next) => {
-  console.log('INCOMING:', req.method, req.url);
-  console.log('ORIGIN:', req.headers.origin);
-  console.log('COOKIE:', req.headers.cookie);
-  next();
-});
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.set('json spaces', 2);
