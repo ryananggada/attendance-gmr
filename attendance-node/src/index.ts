@@ -22,28 +22,14 @@ app.set('trust proxy', 1);
 
 app.use(morgan('dev'));
 
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://tugasgi.id',
-  'https://www.tugasgi.id',
-];
-
-const corsOptions: CorsOptions = {
-  origin: (origin, callback) => {
-    if (!origin) return callback(null, true);
-
-    if (allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-
-    return callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-};
-
 const PORT = 8000;
 
-app.use(cors(corsOptions));
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  }),
+);
 
 app.use(cookieParser());
 
