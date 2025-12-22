@@ -18,6 +18,7 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.set('json spaces', 2);
+app.set('trust proxy', 1);
 
 app.use(morgan('dev'));
 
