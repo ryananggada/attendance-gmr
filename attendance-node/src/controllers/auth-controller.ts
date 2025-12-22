@@ -14,55 +14,59 @@ import { department } from '../models/department-model.js';
 dotenv.config();
 
 export const login = async (req: Request, res: Response) => {
-  const { username, password } = req.body;
+  try {
+    const { username, password } = req.body;
 
-  const [selectedUser] = await db
-    .select()
-    .from(user)
-    .where(eq(user.username, username))
-    .innerJoin(department, eq(department.id, user.departmentId));
+    const [selectedUser] = await db
+      .select()
+      .from(user)
+      .where(eq(user.username, username))
+      .innerJoin(department, eq(department.id, user.departmentId));
 
-  if (!selectedUser) {
-    return res.status(401).json({ message: 'Username atau password salah!' });
+    if (!selectedUser) {
+      return res.status(401).json({ message: 'Username atau password salah!' });
+    }
+
+    const isCorrectPass = await bcrypt.compare(
+      password,
+      selectedUser.user.password,
+    );
+    if (!isCorrectPass) {
+      return res.status(401).json({ message: 'Username atau password salah!' });
+    }
+
+    const sessionToken = generateRandomSessionToken();
+    const sessionId = fromSessionTokenToSessionId(sessionToken);
+    const [curSession] = await db
+      .insert(session)
+      .values({
+        id: sessionId,
+        userId: selectedUser.user.id,
+        expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
+      })
+      .returning();
+
+    res.cookie('session', sessionToken, {
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 1000 * 60 * 60 * 24,
+    });
+
+    res.json({
+      message: 'Login berhasil!',
+      user: {
+        id: selectedUser!.user.id,
+        username: selectedUser!.user.username,
+        fullName: selectedUser!.user.fullName,
+        role: selectedUser!.user.role,
+        department: selectedUser!.department,
+      },
+      session: curSession,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error });
   }
-
-  const isCorrectPass = await bcrypt.compare(
-    password,
-    selectedUser.user.password,
-  );
-  if (!isCorrectPass) {
-    return res.status(401).json({ message: 'Username atau password salah!' });
-  }
-
-  const sessionToken = generateRandomSessionToken();
-  const sessionId = fromSessionTokenToSessionId(sessionToken);
-  const [curSession] = await db
-    .insert(session)
-    .values({
-      id: sessionId,
-      userId: selectedUser.user.id,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
-    })
-    .returning();
-
-  res.cookie('session', sessionToken, {
-    httpOnly: true,
-    secure: true,
-    sameSite: 'none',
-    maxAge: 1000 * 60 * 60 * 24,
-  });
-
-  res.json({
-    message: 'Login berhasil!',
-    user: {
-      id: selectedUser!.user.id,
-      username: selectedUser!.user.username,
-      fullName: selectedUser!.user.fullName,
-      role: selectedUser!.user.role,
-      department: selectedUser!.department,
-    },
-    session: curSession,
-  });
 };
 
 export const refresh = async (req: Request, res: Response) => {
