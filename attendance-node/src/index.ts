@@ -44,7 +44,6 @@ const corsOptions: CorsOptions = {
 const PORT = 8000;
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions));
 
 app.use(cookieParser());
 
