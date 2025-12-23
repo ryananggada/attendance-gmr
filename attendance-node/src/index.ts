@@ -28,9 +28,12 @@ const PORT = 8000;
 app.use(
   cors({
     origin: 'https://tugasgi.id',
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true,
   }),
 );
+app.options('*', cors());
 
 app.use(cookieParser());
 
