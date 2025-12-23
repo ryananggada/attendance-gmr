@@ -18,10 +18,14 @@ const app = express();
 
 app.use(
   cors({
-    origin: ['https://tugasgi.id', 'http://localhost:5173'],
+    origin: [
+      'https://tugasgi.id',
+      'http://localhost:5173',
+      'http://103.150.227.199',
+    ],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: false,
+    credentials: true,
   }),
 );
 app.options('*', cors());
