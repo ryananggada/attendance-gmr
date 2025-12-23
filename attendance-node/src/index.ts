@@ -21,7 +21,7 @@ app.use(
     origin: ['https://tugasgi.id', 'http://localhost:5173'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
+    credentials: false,
   }),
 );
 app.options('*', cors());
