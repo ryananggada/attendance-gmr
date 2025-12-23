@@ -16,6 +16,16 @@ import { __dirname } from './utils/path.js';
 
 const app = express();
 
+app.use(
+  cors({
+    origin: ['https://tugasgi.id', 'http://localhost:5173'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    credentials: true,
+  }),
+);
+app.options('*', cors());
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.set('json spaces', 2);
@@ -24,16 +34,6 @@ app.set('trust proxy', 1);
 app.use(morgan('dev'));
 
 const PORT = 8000;
-
-app.use(
-  cors({
-    origin: 'https://tugasgi.id',
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-  }),
-);
-app.options('*', cors());
 
 app.use(cookieParser());
 
