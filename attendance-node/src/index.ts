@@ -27,7 +27,7 @@ const PORT = 8000;
 
 app.use(
   cors({
-    origin: true,
+    origin: 'https://tugasgi.id',
     credentials: true,
   }),
 );
