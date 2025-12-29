@@ -17,29 +17,27 @@ import { getDepartments } from '@/services/department-service';
 import { createUser } from '@/services/user-service';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { Eye, EyeOff } from 'lucide-react';
+import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
 import z from 'zod';
 
-const formSchema = z
-  .object({
-    username: z.string().min(1, 'Username dibutuhkan'),
-    fullName: z.string().min(1, 'Fullname dibutuhkan'),
-    password: z
-      .string()
-      .min(1, 'Password dibutuhkan')
-      .min(8, 'Password harus 8 karakter atau lebih'),
-    confirmPassword: z.string().min(1, 'Confirm password dibutuhkan'),
-    departmentId: z.number('Department harus dipilih'),
-    role: z.enum(['User', 'Admin'], 'Role harus dipilih'),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'Confirm password harus sama password',
-    path: ['confirmPassword'],
-  });
+const formSchema = z.object({
+  username: z.string().min(1, 'Username dibutuhkan'),
+  fullName: z.string().min(1, 'Fullname dibutuhkan'),
+  password: z
+    .string()
+    .min(1, 'Password dibutuhkan')
+    .min(8, 'Password harus 8 karakter atau lebih'),
+  departmentId: z.number('Department harus dipilih'),
+  role: z.enum(['User', 'Admin'], 'Role harus dipilih'),
+});
 
 export default function AddUserPage() {
+  const [showPassword, setShowPassword] = useState(false);
+
   const navigate = useNavigate();
   const { data: departments } = useQuery({
     queryKey: ['departments'],
@@ -63,7 +61,6 @@ export default function AddUserPage() {
       username: '',
       fullName: '',
       password: '',
-      confirmPassword: '',
       departmentId: undefined,
       role: 'User',
     },
@@ -73,15 +70,13 @@ export default function AddUserPage() {
     username,
     fullName,
     password,
-    confirmPassword,
     departmentId,
     role,
   }: z.infer<typeof formSchema>) => {
     mutation.mutate({
       username,
       fullName,
-      password,
-      confirmPassword,
+      password: String(password),
       departmentId,
       role,
     });
@@ -128,29 +123,27 @@ export default function AddUserPage() {
           render={({ field, fieldState }) => (
             <Field data-invalid={fieldState.invalid}>
               <FieldLabel htmlFor={field.name}>Password</FieldLabel>
-              <Input
-                {...field}
-                type="password"
-                id={field.name}
-                aria-invalid={fieldState.invalid}
-              />
-              {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
-            </Field>
-          )}
-        />
+              <div className="relative">
+                <Input
+                  {...field}
+                  id={field.name}
+                  type={showPassword ? 'text' : 'password'}
+                  aria-invalid={fieldState.invalid}
+                  className="pr-10"
+                />
 
-        <Controller
-          name="confirmPassword"
-          control={form.control}
-          render={({ field, fieldState }) => (
-            <Field data-invalid={fieldState.invalid}>
-              <FieldLabel htmlFor={field.name}>Confirm Password</FieldLabel>
-              <Input
-                {...field}
-                type="password"
-                id={field.name}
-                aria-invalid={fieldState.invalid}
-              />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </button>
+              </div>
               {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
             </Field>
           )}

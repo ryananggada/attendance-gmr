@@ -1,5 +1,11 @@
 import { relations } from 'drizzle-orm';
-import { integer, pgEnum, pgTable, varchar } from 'drizzle-orm/pg-core';
+import {
+  boolean,
+  integer,
+  pgEnum,
+  pgTable,
+  varchar,
+} from 'drizzle-orm/pg-core';
 import { attendance } from './attendance-model.js';
 import { session } from './session-model.js';
 import { department } from './department-model.js';
@@ -14,6 +20,7 @@ export const user = pgTable('user', {
   fullName: varchar({ length: 100 }).notNull(),
   departmentId: integer().notNull(),
   role: roleEnum().notNull(),
+  isDeleted: boolean().default(false),
 });
 
 export const userRelations = relations(user, ({ one, many }) => ({

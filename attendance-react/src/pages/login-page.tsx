@@ -13,6 +13,8 @@ import {
   FieldGroup,
   FieldLabel,
 } from '@/components/ui/field';
+import { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 
 const formSchema = z.object({
   username: z.string().min(1, {
@@ -25,6 +27,8 @@ const formSchema = z.object({
 });
 
 export default function LoginPage() {
+  const [showPassword, setShowPassword] = useState(false);
+
   const { login, user } = useAuth();
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -36,7 +40,7 @@ export default function LoginPage() {
   });
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
-    login(values.username, values.password);
+    login(values.username, String(values.password));
   };
 
   if (user) {
@@ -78,12 +82,27 @@ export default function LoginPage() {
                   render={({ field, fieldState }) => (
                     <Field data-invalid={fieldState.invalid}>
                       <FieldLabel htmlFor={field.name}>Password</FieldLabel>
-                      <Input
-                        {...field}
-                        id={field.name}
-                        type="password"
-                        aria-invalid={fieldState.invalid}
-                      />
+                      <div className="relative">
+                        <Input
+                          {...field}
+                          id={field.name}
+                          type={showPassword ? 'text' : 'password'}
+                          aria-invalid={fieldState.invalid}
+                          className="pr-10"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          {showPassword ? (
+                            <EyeOff className="h-4 w-4" />
+                          ) : (
+                            <Eye className="h-4 w-4" />
+                          )}
+                        </button>
+                      </div>
                       {fieldState.invalid && (
                         <FieldError errors={[fieldState.error]} />
                       )}

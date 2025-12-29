@@ -15,22 +15,7 @@ import fieldAttendanceRoute from './routes/field-attendance-route.js';
 import { __dirname } from './utils/path.js';
 
 const app = express();
-
-/*
-app.use(
-  cors({
-    origin: [
-      'https://tugasgi.id',
-      'http://localhost:5173',
-      'http://103.150.227.199',
-    ],
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
-    credentials: true,
-  }),
-);
-app.options('*', cors());
-*/
+const PORT = 8000;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -38,9 +23,23 @@ app.set('json spaces', 2);
 app.set('trust proxy', 1);
 
 app.use(morgan('dev'));
+/*
+const allowedOrigins = ['http://localhost:5173'];
 
-const PORT = 8000;
+const corsOptions: CorsOptions = {
+  origin(origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'), false);
+    }
+  },
+  credentials: true,
+  optionsSuccessStatus: 200,
+};
 
+app.use(cors(corsOptions));
+*/
 app.use(cookieParser());
 
 app.get('/api', (_req, res) => {

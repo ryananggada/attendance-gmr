@@ -2,14 +2,12 @@ export const createUser = async ({
   fullName,
   username,
   password,
-  confirmPassword,
   departmentId,
   role,
 }: {
   fullName: string;
   username: string;
   password: string;
-  confirmPassword: string;
   departmentId: number;
   role: 'User' | 'Admin';
 }) => {
@@ -23,7 +21,6 @@ export const createUser = async ({
       fullName,
       username,
       password,
-      confirmPassword,
       departmentId,
       role,
     }),
@@ -92,11 +89,9 @@ export const updateUser = async ({
 export const updatePassword = async ({
   id,
   password,
-  confirmPassword,
 }: {
   id: number;
   password: string;
-  confirmPassword: string;
 }) => {
   const response = await fetch(`${import.meta.env.VITE_NODE_URL}/users/${id}`, {
     method: 'PATCH',
@@ -104,7 +99,24 @@ export const updatePassword = async ({
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ password, confirmPassword }),
+    body: JSON.stringify({ password }),
+  });
+
+  if (!response.ok) {
+    const errorBody = await response.json();
+    throw new Error(errorBody.message);
+  }
+
+  return response.json();
+};
+
+export const deleteUser = async (id: number) => {
+  const response = await fetch(`${import.meta.env.VITE_NODE_URL}/users/${id}`, {
+    method: 'DELETE',
+    credentials: 'include',
+    headers: {
+      'Content-Type': 'application/json',
+    },
   });
 
   if (!response.ok) {

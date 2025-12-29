@@ -1,6 +1,6 @@
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import type { Request, Response } from 'express';
 import { user } from '../models/user-model.js';
 import { db } from '../configs/db.js';
@@ -20,7 +20,7 @@ export const login = async (req: Request, res: Response) => {
     const [selectedUser] = await db
       .select()
       .from(user)
-      .where(eq(user.username, username))
+      .where(and(eq(user.username, username), eq(user.isDeleted, false)))
       .innerJoin(department, eq(department.id, user.departmentId));
 
     if (!selectedUser) {
