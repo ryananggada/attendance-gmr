@@ -1,4 +1,3 @@
-import { type LucideIcon } from 'lucide-react';
 import {
   SidebarGroup,
   SidebarMenu,
@@ -7,24 +6,10 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Link, useLocation } from 'react-router';
-import { useEffect } from 'react';
 
-export function NavMain({
-  items,
-}: {
-  items: {
-    title: string;
-    url: string;
-    icon?: LucideIcon;
-    role?: string[];
-  }[];
-}) {
-  const { toggleSidebar, open, isMobile } = useSidebar();
+export function NavMain({ items }: { items: any[] }) {
+  const { toggleSidebar, isMobile } = useSidebar();
   const location = useLocation();
-
-  useEffect(() => {
-    if (isMobile && open) toggleSidebar();
-  }, [location.pathname, isMobile, open, toggleSidebar]);
 
   return (
     <SidebarGroup>
@@ -35,14 +20,25 @@ export function NavMain({
             location.pathname.startsWith(`${item.url}/`);
 
           return (
-            <Link to={item.url} key={item.title}>
-              <SidebarMenuItem>
-                <SidebarMenuButton tooltip={item.title} isActive={isActive}>
+            <SidebarMenuItem key={item.title}>
+              <SidebarMenuButton
+                asChild
+                tooltip={item.title}
+                isActive={isActive}
+              >
+                <Link
+                  to={item.url}
+                  onClick={() => {
+                    if (isMobile) {
+                      toggleSidebar();
+                    }
+                  }}
+                >
                   {item.icon && <item.icon />}
                   <span>{item.title}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            </Link>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           );
         })}
       </SidebarMenu>
