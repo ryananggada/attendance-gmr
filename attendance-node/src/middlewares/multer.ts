@@ -14,7 +14,7 @@ const upload = multer({
   limits: { fileSize: 5 * 1024 * 1024 },
 });
 
-const uploadDir = path.join(__dirname, '../uploads');
+const uploadDir = path.join(process.cwd(), '../uploads');
 
 export const uploadAndCompress = {
   single: (fieldName: string) => [
