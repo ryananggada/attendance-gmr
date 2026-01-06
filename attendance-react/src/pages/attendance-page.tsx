@@ -36,7 +36,7 @@ import {
 } from '@/services/attendance-service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { AlertCircleIcon } from 'lucide-react';
+import { AlertCircleIcon, Loader2Icon } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 
@@ -201,6 +201,8 @@ export default function AttendancePage() {
       toast.error(error.message);
     },
   });
+
+  const isSubmitting = checkInMutation.isPending || fieldCheckInMutation.isPending || fieldCheckOutMutation.isPending || checkOutMutation.isPending || earlyLeaveMutation.isPending || leaveMutation.isPending;
 
   const onSubmit = async () => {
     const response = await fetch(capturedImage!);
@@ -372,8 +374,11 @@ export default function AttendancePage() {
                     </div>
                   </div>
 
-                  <Button onClick={onSubmit} className="mt-4">
-                    Submit
+                  <Button onClick={onSubmit} disabled={isSubmitting} className="mt-4">
+                    {isSubmitting && (
+                      <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />
+                    )}
+                    {isSubmitting ? 'Memproses...' : 'Submit'}
                   </Button>
                 </>
               )}
@@ -416,7 +421,12 @@ export default function AttendancePage() {
                     />
                   </Field>
 
-                  <Button onClick={onLeaveSubmit}>Submit</Button>
+                  <Button onClick={onLeaveSubmit} disabled={isSubmitting}>
+                    {isSubmitting && (
+                      <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />
+                    )}
+                    {isSubmitting ? 'Memproses...' : 'Submit'}
+                  </Button>
                 </DialogContent>
               </Dialog>
             </div>
@@ -463,7 +473,12 @@ export default function AttendancePage() {
                     />
                   </Field>
 
-                  <Button onClick={onEarlyLeaveSubmit}>Submit</Button>
+                  <Button onClick={onEarlyLeaveSubmit} disabled={isSubmitting}>
+                    {isSubmitting && (
+                      <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />
+                    )}
+                    {isSubmitting ? 'Memproses...' : 'Submit'}
+                  </Button>
                 </DialogContent>
               </Dialog>
             </div>

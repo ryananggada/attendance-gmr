@@ -23,7 +23,7 @@ import {
 } from '@/services/user-service';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2Icon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
@@ -68,6 +68,8 @@ export default function EditUserPage() {
       toast.error(error.message);
     },
   });
+  
+  const isChangePasswordSubmitting = changePasswordMutation.isPending;
 
   const editUserMutation = useMutation({
     mutationFn: updateUser,
@@ -79,6 +81,8 @@ export default function EditUserPage() {
       toast.error(error.message);
     },
   });
+
+  const isEditUserSubmitting = editUserMutation.isPending;
 
   const editUserForm = useForm<z.infer<typeof editUserFormSchema>>({
     resolver: zodResolver(editUserFormSchema),
@@ -220,7 +224,10 @@ export default function EditUserPage() {
             )}
           />
 
-          <Button type="submit">Submit</Button>
+          <Button type="submit" disabled={isEditUserSubmitting || isChangePasswordSubmitting}>
+            {isEditUserSubmitting && <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />}
+            {isEditUserSubmitting ? 'Memproses...' : 'Submit'}
+          </Button>
         </FieldGroup>
       </form>
 
@@ -265,7 +272,10 @@ export default function EditUserPage() {
           />
 
           <Field>
-            <Button type="submit">Change Password</Button>
+            <Button type="submit" disabled={isChangePasswordSubmitting || isEditUserSubmitting}>
+              {isChangePasswordSubmitting && <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />}
+              {isChangePasswordSubmitting ? 'Memproses...' : 'Ubah Password'}
+            </Button>
           </Field>
         </FieldGroup>
       </form>

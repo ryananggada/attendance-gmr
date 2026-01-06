@@ -17,7 +17,7 @@ import { getDepartments } from '@/services/department-service';
 import { createUser } from '@/services/user-service';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2Icon } from 'lucide-react';
 import { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
@@ -54,6 +54,8 @@ export default function AddUserPage() {
       toast.error(error.message);
     },
   });
+
+  const isSubmitting = mutation.isPending;
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -213,7 +215,12 @@ export default function AddUserPage() {
         />
 
         <Field orientation="horizontal">
-          <Button type="submit">Add User</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting && (
+              <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />
+            )}
+            {isSubmitting ? 'Memproses...' : 'Tambah User'}
+          </Button>
         </Field>
       </FieldGroup>
     </form>

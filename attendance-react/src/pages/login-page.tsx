@@ -14,7 +14,7 @@ import {
   FieldLabel,
 } from '@/components/ui/field';
 import { useState } from 'react';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, Loader2Icon } from 'lucide-react';
 
 const formSchema = z.object({
   username: z.string().min(1, {
@@ -39,8 +39,8 @@ export default function LoginPage() {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    login(values.username, String(values.password));
+  const onSubmit = async (values: z.infer<typeof formSchema>) => {
+    await login(values.username, String(values.password));
   };
 
   if (user) {
@@ -111,8 +111,15 @@ export default function LoginPage() {
                 />
 
                 <Field>
-                  <Button className="w-full" type="submit">
-                    Login
+                  <Button
+                    className="w-full"
+                    type="submit"
+                    disabled={form.formState.isSubmitting}
+                  >
+                    {form.formState.isSubmitting && (
+                      <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                    )}
+                    {form.formState.isSubmitting ? "Logging in..." : "Login"}
                   </Button>
                 </Field>
               </FieldGroup>

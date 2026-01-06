@@ -23,7 +23,7 @@ import { createFieldAttendance } from '@/services/field-attendance-service';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { AlertCircleIcon } from 'lucide-react';
+import { AlertCircleIcon, Loader2Icon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
@@ -50,6 +50,7 @@ export default function AddFieldAttendancePage() {
     requestLocation,
   } = usePermissions();
   const navigate = useNavigate();
+
   const mutation = useMutation({
     mutationFn: createFieldAttendance,
     onSuccess: () => {
@@ -61,6 +62,8 @@ export default function AddFieldAttendancePage() {
       toast.error(error.message);
     },
   });
+
+  const isSubmitting = mutation.isPending;
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -202,9 +205,12 @@ export default function AddFieldAttendancePage() {
                       type="button"
                       className="mt-4"
                       onClick={form.handleSubmit(onSubmit)}
-                      disabled={!capturedImage}
+                      disabled={!capturedImage || isSubmitting}
                     >
-                      Tambah Lapangan
+                      {isSubmitting && (
+                        <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />
+                      )}
+                      {isSubmitting ? 'Memproses...' : 'Tambah Lapangan'}
                     </Button>
                   </>
                 )}

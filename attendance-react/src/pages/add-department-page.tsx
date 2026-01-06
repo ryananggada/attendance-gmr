@@ -9,6 +9,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { createDepartment } from '@/services/department-service';
 import { useMutation } from '@tanstack/react-query';
+import { Loader2Icon } from 'lucide-react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
@@ -32,6 +33,8 @@ export default function AddDepartmentPage() {
       toast.error(error.message);
     }
   });
+
+  const isSubmitting = mutation.isPending;
 
   const onSubmit = ({ name, isField }: { name: string; isField: boolean }) => {
     mutation.mutate({ name, isField });
@@ -76,7 +79,12 @@ export default function AddDepartmentPage() {
         />
 
         <Field orientation="horizontal">
-          <Button type="submit">Submit</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting && (
+              <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />
+            )}
+            {isSubmitting ? 'Memproses...' : 'Submit'}
+          </Button>
         </Field>
       </FieldGroup>
     </form>

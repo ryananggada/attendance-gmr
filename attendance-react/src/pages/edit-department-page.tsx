@@ -13,6 +13,7 @@ import {
 } from '@/services/department-service';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
+import { Loader2Icon } from 'lucide-react';
 import { useEffect } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate, useParams } from 'react-router';
@@ -43,6 +44,8 @@ export default function EditDepartmentPage() {
       toast.error(error.message);
     },
   });
+
+  const isSubmitting = mutation.isPending;
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -104,7 +107,12 @@ export default function EditDepartmentPage() {
         />
 
         <Field orientation="horizontal">
-          <Button type="submit">Edit</Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting && (
+              <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />
+            )}
+            {isSubmitting ? 'Memproses...' : 'Ubah'}
+          </Button>
         </Field>
       </FieldGroup>
     </form>
