@@ -17,30 +17,34 @@ export function useGeolocation() {
     return new Promise<{ latitude: number; longitude: number }>(
       (resolve, reject) => {
         if (!navigator.geolocation) {
-          const msg = 'Geolocation is not supported by this browser.';
-          setError(msg);
-          reject(new Error(msg));
+          reject(new Error('Geolocation not supported'));
           return;
         }
 
         setLoading(true);
-        navigator.geolocation.getCurrentPosition(
+
+        const watchId = navigator.geolocation.watchPosition(
           (position) => {
-            const coords = {
-              latitude: position.coords.latitude,
-              longitude: position.coords.longitude,
-            };
-            setLocation(coords);
-            setLoading(false);
-            resolve(coords);
+            const { latitude, longitude, accuracy } = position.coords;
+
+            if (accuracy <= 50) {
+              navigator.geolocation.clearWatch(watchId);
+              setLoading(false);
+
+              const coords = { latitude, longitude };
+              setLocation(coords);
+              resolve(coords);
+            }
           },
           (err) => {
-            setError(err.message);
+            navigator.geolocation.clearWatch(watchId);
             setLoading(false);
             reject(err);
           },
           {
             enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: 15000,
           },
         );
       },
