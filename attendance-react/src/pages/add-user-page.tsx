@@ -217,9 +217,9 @@ export default function AddUserPage() {
         <Field orientation="horizontal">
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting && (
-              <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />
+              <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
             )}
-            {isSubmitting ? 'Memproses...' : 'Tambah User'}
+            Tambah user
           </Button>
         </Field>
       </FieldGroup>

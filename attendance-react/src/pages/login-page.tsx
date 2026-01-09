@@ -119,7 +119,7 @@ export default function LoginPage() {
                     {form.formState.isSubmitting && (
                       <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
                     )}
-                    {form.formState.isSubmitting ? "Logging in..." : "Login"}
+                    Login
                   </Button>
                 </Field>
               </FieldGroup>

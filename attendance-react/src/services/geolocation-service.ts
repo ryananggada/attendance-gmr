@@ -4,7 +4,7 @@ export const reverseGeocode = async (lat: number, long: number) => {
   const res = await fetch(
     `https://us1.locationiq.com/v1/reverse?key=${
       import.meta.env.VITE_GEOLOCATION_API_TOKEN
-    }&lat=${lat}&lon=${long}&format=json`,
+    }&lat=${lat}&lon=${long}&zoom=16&format=json`,
   );
 
   if (!res.ok) throw new Error('Failed to fetch address');

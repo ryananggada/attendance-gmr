@@ -23,7 +23,7 @@ export default function AddDepartmentPage() {
     },
   });
 
-  const mutation = useMutation({ 
+  const mutation = useMutation({
     mutationFn: createDepartment,
     onSuccess: () => {
       toast.success('Tambah department berhasil!');
@@ -31,7 +31,7 @@ export default function AddDepartmentPage() {
     },
     onError: (error) => {
       toast.error(error.message);
-    }
+    },
   });
 
   const isSubmitting = mutation.isPending;
@@ -81,9 +81,9 @@ export default function AddDepartmentPage() {
         <Field orientation="horizontal">
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting && (
-              <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />
+              <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
             )}
-            {isSubmitting ? 'Memproses...' : 'Submit'}
+            Submit
           </Button>
         </Field>
       </FieldGroup>

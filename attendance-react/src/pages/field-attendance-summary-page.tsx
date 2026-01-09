@@ -1,4 +1,5 @@
 import { Datepicker } from '@/components/date-picker';
+import { Button } from '@/components/ui/button';
 import { DataTable } from '@/components/ui/data-table';
 import { Field, FieldLabel } from '@/components/ui/field';
 import {
@@ -9,11 +10,13 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useReverseGeocode } from '@/hooks/use-reverse-geocode';
+import { exportFieldAttendanceToExcel } from '@/services/excel-service';
 import { getFieldAttendances } from '@/services/field-attendance-service';
 import { getUsers } from '@/services/user-service';
 import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
+import { Loader2Icon } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 
 type FieldAttendance = {
@@ -42,6 +45,7 @@ const LocationCell = ({ location }: LocationCellProps) => {
 export default function FieldAttendanceSummaryPage() {
   const [date, setDate] = useState(new Date());
   const [selectedUserId, setSelectedUserId] = useState('');
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data: users = [] } = useQuery({
     queryKey: ['users'],
@@ -54,6 +58,15 @@ export default function FieldAttendanceSummaryPage() {
         data.department?.isField === true,
     );
   }, [users]);
+
+  const selectedUser = useMemo(() => {
+    return fieldUsers.find(
+      (data: { user: { id: number } }) =>
+        String(data.user.id) === selectedUserId,
+    );
+  }, [fieldUsers, selectedUserId]);
+
+  const selectedUserName = selectedUser?.user.fullName ?? '';
 
   const { data: fieldAttendances = [], isLoading } = useQuery({
     queryKey: ['fieldAttendances', selectedUserId, date],
@@ -97,7 +110,7 @@ export default function FieldAttendanceSummaryPage() {
     },
     {
       accessorKey: 'image',
-      header: 'Gambar',
+      header: 'Foto',
       cell: ({ row }) => {
         const image = row.getValue('image');
 
@@ -111,6 +124,22 @@ export default function FieldAttendanceSummaryPage() {
       },
     },
   ];
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+
+      await new Promise((r) => setTimeout(r, 0));
+
+      exportFieldAttendanceToExcel({
+        name: selectedUserName,
+        date: format(date, 'dd/MM/yyyy'),
+        rows: fieldAttendances,
+      });
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   useEffect(() => {
     if (fieldUsers.length > 0) {
@@ -139,6 +168,15 @@ export default function FieldAttendanceSummaryPage() {
           </SelectContent>
         </Select>
       </Field>
+
+      <Button
+        className="max-w-2xs"
+        onClick={handleExport}
+        disabled={isExporting || fieldAttendances.length === 0}
+      >
+        {isExporting && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
+        Export ke Excel
+      </Button>
 
       <DataTable
         columns={columns}

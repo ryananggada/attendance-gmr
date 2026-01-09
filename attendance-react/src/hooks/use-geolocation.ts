@@ -23,17 +23,19 @@ export function useGeolocation() {
 
         setLoading(true);
 
+        let bestPosition: GeolocationPosition | null = null;
+
         const watchId = navigator.geolocation.watchPosition(
           (position) => {
-            const { latitude, longitude, accuracy } = position.coords;
+            bestPosition = position;
 
-            if (accuracy <= 50) {
+            if (position.coords.accuracy <= 50) {
               navigator.geolocation.clearWatch(watchId);
               setLoading(false);
-
-              const coords = { latitude, longitude };
-              setLocation(coords);
-              resolve(coords);
+              resolve({
+                latitude: position.coords.latitude,
+                longitude: position.coords.longitude,
+              });
             }
           },
           (err) => {
@@ -44,9 +46,22 @@ export function useGeolocation() {
           {
             enableHighAccuracy: true,
             maximumAge: 0,
-            timeout: 15000,
           },
         );
+
+        setTimeout(() => {
+          navigator.geolocation.clearWatch(watchId);
+          setLoading(false);
+
+          if (bestPosition) {
+            resolve({
+              latitude: bestPosition.coords.latitude,
+              longitude: bestPosition.coords.longitude,
+            });
+          } else {
+            reject(new Error('Unable to get location'));
+          }
+        }, 2500);
       },
     );
   }, []);

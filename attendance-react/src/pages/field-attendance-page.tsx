@@ -66,7 +66,7 @@ const columns: ColumnDef<FieldAttendance>[] = [
   },
   {
     accessorKey: 'image',
-    header: 'Gambar',
+    header: 'Foto',
     cell: ({ row }) => {
       const image = row.getValue('image');
 

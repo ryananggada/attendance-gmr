@@ -10,7 +10,7 @@ const videoConstraints = {
 
 type CameraProps = {
   setCapturedImage: (img: string | null) => void;
-}
+};
 
 export default function Camera({ setCapturedImage }: CameraProps) {
   const webcamRef = useRef<Webcam>(null);
@@ -29,6 +29,7 @@ export default function Camera({ setCapturedImage }: CameraProps) {
             audio={false}
             screenshotFormat="image/jpeg"
             videoConstraints={videoConstraints}
+            mirrored={true}
             className="h-full w-auto object-cover"
           />
         </div>

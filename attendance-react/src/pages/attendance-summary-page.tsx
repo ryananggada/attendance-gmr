@@ -14,9 +14,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useReverseGeocode } from '@/hooks/use-reverse-geocode';
 import { haversineDistance } from '@/lib/distance';
 import { getAttendances } from '@/services/attendance-service';
+import { getDepartments } from '@/services/department-service';
+import { exportMonthlyAttendanceToExcel } from '@/services/excel-service';
 import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
+import { Loader2Icon } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 type EventDetail = {
@@ -27,6 +30,7 @@ type EventDetail = {
 };
 
 type AbsentRow = {
+  departmentId: number;
   name: string;
   date: string;
   time: string;
@@ -37,7 +41,7 @@ type AbsentRow = {
 type RawLeave = Omit<AbsentRow, 'name' | 'date'>;
 
 type RawAttendanceData = {
-  user: { fullName: string };
+  user: { fullName: string; departmentId: number };
   attendance: {
     id: number;
     date: string;
@@ -52,6 +56,7 @@ type RawAttendanceData = {
 type AttendanceRow = {
   id: number;
   name: string;
+  departmentId: number;
   date: string;
   events: {
     CheckIn?: EventDetail;
@@ -70,6 +75,7 @@ export default function AttendanceSummaryPage() {
   const [activeDateTab, setActiveDateTab] = useState<'day' | 'month'>('day');
   const [isAbsent, setIsAbsent] = useState<boolean>(false);
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
+  const [isExporting, setIsExporting] = useState(false);
 
   const { data: attendances, isLoading } = useQuery({
     queryKey: ['attendances', date, monthDate, activeDateTab],
@@ -81,6 +87,20 @@ export default function AttendanceSummaryPage() {
           : `${monthDate.year}-${String(monthDate.month).padStart(2, '0')}`,
       ),
   });
+
+  const { data: departments } = useQuery({
+    queryKey: ['departments'],
+    queryFn: getDepartments,
+  });
+
+  const departmentMap = useMemo(() => {
+    return (
+      departments?.reduce<Record<number, string>>((acc, dept) => {
+        acc[dept.id] = dept.name;
+        return acc;
+      }, {}) ?? {}
+    );
+  }, [departments]);
 
   const { data: location } = useReverseGeocode(
     selectedEvent?.location?.[0] ?? null,
@@ -160,6 +180,13 @@ export default function AttendanceSummaryPage() {
 
   const absentColumns: ColumnDef<AbsentRow>[] = [
     {
+      header: 'Department',
+      cell: ({ row }) => {
+        const departmentId = row.original.departmentId;
+        return departmentMap[departmentId] ?? '-';
+      },
+    },
+    {
       header: 'Nama',
       accessorKey: 'name',
     },
@@ -191,7 +218,15 @@ export default function AttendanceSummaryPage() {
       const base = [...attendanceColumns];
 
       if (activeDateTab === 'month') {
-        base.splice(1, 0, {
+        base.splice(0, 0, {
+          header: 'Department',
+          cell: ({ row }) => {
+            const departmentId = row.original.departmentId;
+            return departmentMap[departmentId] ?? '-';
+          },
+        });
+
+        base.splice(2, 0, {
           accessorKey: 'date',
           header: 'Tanggal',
           cell: ({ row }) => format(new Date(row.original.date), 'dd/MM/yyyy'),
@@ -238,6 +273,7 @@ export default function AttendanceSummaryPage() {
           return {
             id: item.attendance.id,
             name: item.user.fullName,
+            departmentId: item.user.departmentId,
             date: item.attendance.date,
             time: absent.time,
             type,
@@ -255,7 +291,7 @@ export default function AttendanceSummaryPage() {
         (a: {
           checkEvent: any[];
           attendance: { id: number; date: string };
-          user: { fullName: string };
+          user: { fullName: string; departmentId: number };
         }) => {
           const events = {
             CheckIn: a.checkEvent.find(
@@ -275,6 +311,7 @@ export default function AttendanceSummaryPage() {
           return {
             id: a.attendance.id,
             name: a.user.fullName,
+            departmentId: a.user.departmentId,
             date: a.attendance.date,
             events,
           };
@@ -294,6 +331,18 @@ export default function AttendanceSummaryPage() {
         return 'Check Out';
       default:
         return '-';
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      setIsExporting(true);
+
+      await new Promise((r) => setTimeout(r, 0));
+
+      exportMonthlyAttendanceToExcel(rows, departmentMap, monthDate);
+    } finally {
+      setIsExporting(false);
     }
   };
 
@@ -321,6 +370,17 @@ export default function AttendanceSummaryPage() {
         <Switch id="absent" checked={isAbsent} onCheckedChange={setIsAbsent} />
         <Label htmlFor="absent">Filter ke tidak hadir / izin</Label>
       </div>
+
+      {activeDateTab === 'month' && !isAbsent && (
+        <Button
+          className="max-w-2xs"
+          onClick={handleExport}
+          disabled={isExporting || rows.length === 0}
+        >
+          {isExporting && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
+          Export ke Excel
+        </Button>
+      )}
 
       <Dialog
         open={!!selectedEvent}

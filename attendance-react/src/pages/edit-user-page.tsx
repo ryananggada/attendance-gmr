@@ -68,7 +68,7 @@ export default function EditUserPage() {
       toast.error(error.message);
     },
   });
-  
+
   const isChangePasswordSubmitting = changePasswordMutation.isPending;
 
   const editUserMutation = useMutation({
@@ -224,9 +224,14 @@ export default function EditUserPage() {
             )}
           />
 
-          <Button type="submit" disabled={isEditUserSubmitting || isChangePasswordSubmitting}>
-            {isEditUserSubmitting && <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />}
-            {isEditUserSubmitting ? 'Memproses...' : 'Submit'}
+          <Button
+            type="submit"
+            disabled={isEditUserSubmitting || isChangePasswordSubmitting}
+          >
+            {isEditUserSubmitting && (
+              <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            Ubah
           </Button>
         </FieldGroup>
       </form>
@@ -272,9 +277,14 @@ export default function EditUserPage() {
           />
 
           <Field>
-            <Button type="submit" disabled={isChangePasswordSubmitting || isEditUserSubmitting}>
-              {isChangePasswordSubmitting && <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />}
-              {isChangePasswordSubmitting ? 'Memproses...' : 'Ubah Password'}
+            <Button
+              type="submit"
+              disabled={isChangePasswordSubmitting || isEditUserSubmitting}
+            >
+              {isChangePasswordSubmitting && (
+                <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+              )}
+              Ubah Password
             </Button>
           </Field>
         </FieldGroup>

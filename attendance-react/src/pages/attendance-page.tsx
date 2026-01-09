@@ -1,5 +1,5 @@
 import Camera from '@/components/camera';
-import { Alert, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -36,7 +36,7 @@ import {
 } from '@/services/attendance-service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
-import { AlertCircleIcon, Loader2Icon } from 'lucide-react';
+import { AlertCircleIcon, CheckCircle2Icon, Loader2Icon } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 
@@ -45,14 +45,17 @@ type AttendanceType =
   | 'FieldCheckIn'
   | 'FieldCheckOut'
   | 'CheckOut'
-  | 'Done'
-  | 'Leave'
-  | 'EarlyLeave';
+  | null;
 
 export default function AttendancePage() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [attendanceType, setAttendanceType] =
-    useState<AttendanceType>('CheckIn');
+  const [attendanceType, setAttendanceType] = useState<AttendanceType>(null);
+
+  const openAttendanceDialog = (type: AttendanceType) => {
+    setAttendanceType(type);
+    setOpenDialog(true);
+  };
+
   const { getLocation } = useGeolocation();
   const {
     isLoading: isPermissionsLoading,
@@ -74,18 +77,23 @@ export default function AttendancePage() {
   const [earlyLeaveType, setEarlyLeaveType] = useState('');
   const [earlyLeaveRemarks, setEarlyLeaveRemarks] = useState('');
 
+  const [distance, setDistance] = useState<number | null>(null);
+  const [distanceLoading, setDistanceLoading] = useState(true);
+  const isOutOfOffice =
+    !distanceLoading &&
+    distance !== null &&
+    distance >= import.meta.env.VITE_MAX_DISTANCE;
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
   const queryClient = useQueryClient();
 
-  const {
-    data: attendanceData,
-    isFetched,
-    isLoading: isAttendanceLoading,
-  } = useQuery({
+  const { data: attendanceData, isLoading: isAttendanceLoading } = useQuery({
     queryKey: ['attendance', user!.id, date],
     queryFn: () => getSingleAttendance(user!.id, date),
   });
 
-  const { attendance, checkEvent, leave, earlyLeave } = attendanceData ?? {};
+  const { attendance, checkEvent, earlyLeave, leave } = attendanceData ?? {};
 
   const events = useMemo(() => {
     if (!checkEvent) return [];
@@ -95,6 +103,42 @@ export default function AttendancePage() {
   const fieldCheckInEvent = events.find((ev) => ev.type === 'FieldCheckIn');
   const fieldCheckOutEvent = events.find((ev) => ev.type === 'FieldCheckOut');
   const checkOutEvent = events.find((ev) => ev.type === 'CheckOut');
+
+  const attendanceState = {
+    checkInDone: !!checkInEvent,
+    fieldCheckInDone: !!fieldCheckInEvent,
+    fieldCheckOutDone: !!fieldCheckOutEvent,
+    checkOutDone: !!checkOutEvent,
+  };
+
+  const attendanceLocked =
+    !isGranted || isOutOfOffice || distanceLoading || isSubmitting || !!leave;
+
+  const canCheckIn =
+    !attendanceLocked &&
+    !attendanceState.checkInDone &&
+    !attendanceState.checkOutDone;
+  const canFieldCheckIn =
+    !attendanceLocked &&
+    attendanceState.checkInDone &&
+    !attendanceState.fieldCheckInDone &&
+    !attendanceState.checkOutDone;
+  const canFieldCheckOut =
+    !attendanceLocked &&
+    attendanceState.checkInDone &&
+    !attendanceState.fieldCheckOutDone &&
+    !attendanceState.checkOutDone;
+  const canCheckOut =
+    !attendanceLocked &&
+    attendanceState.checkInDone &&
+    !attendanceState.checkOutDone;
+
+  const hasCheckedIn = events?.some(
+    (e: { type: string }) => e.type === 'CheckIn',
+  );
+  const hasCheckedOut = events?.some(
+    (e: { type: string }) => e.type === 'CheckOut',
+  );
 
   const { data: locationFieldCheckIn, isLoading: loadingFieldCheckIn } =
     useReverseGeocode(
@@ -202,57 +246,44 @@ export default function AttendancePage() {
     },
   });
 
-  const isSubmitting = checkInMutation.isPending || fieldCheckInMutation.isPending || fieldCheckOutMutation.isPending || checkOutMutation.isPending || earlyLeaveMutation.isPending || leaveMutation.isPending;
-
   const onSubmit = async () => {
-    const response = await fetch(capturedImage!);
-    const blob = await response.blob();
-    const file = new File([blob], `attendance-${Date.now()}.jpg`, {
-      type: 'image/jpeg',
-    });
-    const coords = await getLocation();
+    try {
+      setIsSubmitting(true);
 
-    const currentDate = format(new Date(), 'yyyy-MM-dd');
-    const currentTime = format(new Date(), 'HH:mm:ss');
+      const response = await fetch(capturedImage!);
+      const blob = await response.blob();
+      const file = new File([blob], `attendance-${Date.now()}.jpg`, {
+        type: 'image/jpeg',
+      });
+      const coords = await getLocation();
 
-    if (attendanceType === 'CheckIn') {
-      checkInMutation.mutate({
+      const payload = {
         userId: user!.id,
-        date: currentDate,
-        time: currentTime,
+        date: format(new Date(), 'yyyy-MM-dd'),
+        time: format(new Date(), 'HH:mm:ss'),
         location: coords,
         image: file,
-      });
-    }
+      };
 
-    if (attendanceType === 'FieldCheckIn') {
-      fieldCheckInMutation.mutate({
-        userId: user!.id,
-        date: currentDate,
-        time: currentTime,
-        location: coords,
-        image: file,
-      });
-    }
+      if (attendanceType === 'CheckIn') {
+        await checkInMutation.mutateAsync(payload);
+      }
 
-    if (attendanceType === 'FieldCheckOut') {
-      fieldCheckOutMutation.mutate({
-        userId: user!.id,
-        date: currentDate,
-        time: currentTime,
-        location: coords,
-        image: file,
-      });
-    }
+      if (attendanceType === 'FieldCheckIn') {
+        await fieldCheckInMutation.mutateAsync(payload);
+      }
 
-    if (attendanceType === 'CheckOut') {
-      checkOutMutation.mutate({
-        userId: user!.id,
-        date: currentDate,
-        time: currentTime,
-        location: coords,
-        image: file,
-      });
+      if (attendanceType === 'FieldCheckOut') {
+        await fieldCheckOutMutation.mutateAsync(payload);
+      }
+
+      if (attendanceType === 'CheckOut') {
+        await checkOutMutation.mutateAsync(payload);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Gagal submit');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -288,215 +319,153 @@ export default function AttendancePage() {
   }, [cameraStatus, locationStatus]);
 
   useEffect(() => {
-    if (!isFetched || !user) return;
+    let cancelled = false;
 
-    if (!attendance) {
-      return setAttendanceType('CheckIn');
-    }
+    const checkDistance = async () => {
+      try {
+        setDistanceLoading(true);
 
-    if (leave) {
-      return setAttendanceType('Leave');
-    }
+        const coords = await getLocation();
+        const d = haversineDistance(coords.latitude, coords.longitude);
 
-    const has = (t: string) =>
-      events.some((e: { type: string }) => e.type === t);
-
-    if (user.department.isField) {
-      if (has('CheckIn') && !has('FieldCheckIn')) {
-        return setAttendanceType('FieldCheckIn');
+        if (!cancelled) {
+          setDistance(d);
+        }
+      } catch {
+        if (!cancelled) {
+          setDistance(null);
+        }
+      } finally {
+        if (!cancelled) {
+          setDistanceLoading(false);
+        }
       }
+    };
 
-      if (has('CheckIn') && has('FieldCheckIn') && !has('FieldCheckOut')) {
-        return setAttendanceType('FieldCheckOut');
-      }
+    checkDistance();
 
-      if (
-        has('CheckIn') &&
-        has('FieldCheckIn') &&
-        has('FieldCheckOut') &&
-        !has('CheckOut')
-      ) {
-        return setAttendanceType('CheckOut');
-      }
-    }
-
-    if (!user.department.isField) {
-      if (has('CheckIn') && !has('CheckOut')) {
-        return setAttendanceType('CheckOut');
-      }
-    }
-
-    return setAttendanceType('Done');
-  }, [isFetched, attendance, events, leave, earlyLeave, user]);
+    return () => {
+      cancelled = true;
+    };
+  }, [getLocation]);
 
   return (
     <div className="flex flex-1 flex-col gap-4">
-      {isPermissionsLoading ? (
-        <Spinner className="mx-auto size-12" />
-      ) : isGranted ? (
-        <>
-          <Dialog
-            open={openDialog}
-            onOpenChange={(isOpen) => {
-              setOpenDialog(isOpen);
+      <Dialog
+        open={openDialog}
+        onOpenChange={(isOpen) => {
+          setOpenDialog(isOpen);
 
-              if (!isOpen) {
-                setCapturedImage('');
-              }
-            }}
-          >
-            <DialogTrigger asChild>
+          if (!isOpen) {
+            setCapturedImage('');
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Absen</DialogTitle>
+          </DialogHeader>
+
+          {!capturedImage && <Camera setCapturedImage={setCapturedImage} />}
+          {capturedImage && (
+            <>
+              <div className="w-full max-w-md mx-auto">
+                <div className="aspect-[3/4] bg-black rounded overflow-hidden">
+                  <img
+                    src={capturedImage}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              </div>
+
               <Button
-                className="mx-auto min-w-[156px]"
-                disabled={
-                  !(
-                    cameraStatus === 'granted' && locationStatus === 'granted'
-                  ) || ['Done', 'Leave'].includes(attendanceType)
-                }
+                onClick={onSubmit}
+                disabled={isSubmitting}
+                className="mt-4"
               >
-                Absen
+                {isSubmitting && (
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Submit
               </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Absen</DialogTitle>
-              </DialogHeader>
-
-              {!capturedImage && <Camera setCapturedImage={setCapturedImage} />}
-              {capturedImage && (
-                <>
-                  <div className="w-full max-w-md mx-auto">
-                    <div className="aspect-[3/4] bg-black rounded overflow-hidden">
-                      <img
-                        src={capturedImage}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                  </div>
-
-                  <Button onClick={onSubmit} disabled={isSubmitting} className="mt-4">
-                    {isSubmitting && (
-                      <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />
-                    )}
-                    {isSubmitting ? 'Memproses...' : 'Submit'}
-                  </Button>
-                </>
-              )}
-            </DialogContent>
-          </Dialog>
-
-          {attendanceType === 'CheckIn' && (
-            <div className="mx-auto">
-              <Dialog open={leaveDialog} onOpenChange={setLeaveDialog}>
-                <DialogTrigger asChild>
-                  <Button variant="destructive" className="min-w-[156px]">
-                    Tidak hadir
-                  </Button>
-                </DialogTrigger>
-
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>
-                      Yakin absen tidak hadir? Pilih alasannya.
-                    </DialogTitle>
-                  </DialogHeader>
-
-                  <Field>
-                    <Select onValueChange={(e) => setLeaveType(e)}>
-                      <SelectTrigger className="w-[256px]">
-                        <SelectValue placeholder="Pilih alasan" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem value="Sick">Sakit</SelectItem>
-                          <SelectItem value="Leave">Cuti</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-
-                    <FieldLabel>Keterangan</FieldLabel>
-                    <Input
-                      value={leaveRemarks}
-                      onChange={(e) => setLeaveRemarks(e.target.value)}
-                    />
-                  </Field>
-
-                  <Button onClick={onLeaveSubmit} disabled={isSubmitting}>
-                    {isSubmitting && (
-                      <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />
-                    )}
-                    {isSubmitting ? 'Memproses...' : 'Submit'}
-                  </Button>
-                </DialogContent>
-              </Dialog>
-            </div>
+            </>
           )}
+        </DialogContent>
+      </Dialog>
 
-          {attendanceType !== 'CheckIn' && (
-            <div className="mx-auto">
-              <Dialog
-                open={earlyLeaveDialog}
-                onOpenChange={setEarlyLeaveDialog}
-              >
-                <DialogTrigger asChild>
-                  <Button
-                    disabled={['Done'].includes(attendanceType) || !!earlyLeave}
-                    variant="secondary"
-                    className="min-w-[156px]"
-                  >
-                    Izin
-                  </Button>
-                </DialogTrigger>
+      {leave && (
+        <Alert>
+          <CheckCircle2Icon />
+          <AlertTitle>Tidak hadir</AlertTitle>
+          <AlertDescription>
+            Anda telah melakukan absen tidak hadir.
+          </AlertDescription>
+        </Alert>
+      )}
 
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Yakin izin? Pilih alasannya.</DialogTitle>
-                  </DialogHeader>
+      {earlyLeave && (
+        <Alert>
+          <CheckCircle2Icon />
+          <AlertTitle>Izin</AlertTitle>
+          <AlertDescription>Anda telah melakukan izin.</AlertDescription>
+        </Alert>
+      )}
 
-                  <Field>
-                    <Select onValueChange={(e) => setEarlyLeaveType(e)}>
-                      <SelectTrigger className="w-[256px]">
-                        <SelectValue placeholder="Pilih alasan" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem value="Time">Waktu Kerja</SelectItem>
-                          <SelectItem value="Early">Pulang Cepat</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-
-                    <FieldLabel>Keterangan</FieldLabel>
-                    <Input
-                      value={earlyLeaveRemarks}
-                      onChange={(e) => setEarlyLeaveRemarks(e.target.value)}
-                    />
-                  </Field>
-
-                  <Button onClick={onEarlyLeaveSubmit} disabled={isSubmitting}>
-                    {isSubmitting && (
-                      <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />
-                    )}
-                    {isSubmitting ? 'Memproses...' : 'Submit'}
-                  </Button>
-                </DialogContent>
-              </Dialog>
-            </div>
+      {isPermissionsLoading ? (
+        <Alert>
+          <Loader2Icon className="h-4 w-4 animate-spin" />
+          <AlertTitle>Mengecek izin</AlertTitle>
+          <AlertDescription>
+            Memastikan kamera sama lokasi dinyalakan...
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <>
+          {!isGranted && (
+            <Alert variant="destructive">
+              <AlertCircleIcon />
+              <AlertTitle>Izin dibutuhkan</AlertTitle>
+              <AlertDescription>
+                Mohon nyalain izin lokasi dan kamera di perangkat anda.
+              </AlertDescription>
+            </Alert>
           )}
         </>
-      ) : (
+      )}
+
+      {distanceLoading && (
+        <Alert>
+          <Loader2Icon className="h-4 w-4 animate-spin" />
+          <AlertTitle>Mengecek lokasi</AlertTitle>
+          <AlertDescription>
+            Memastikan Anda berada di area kantor...
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isOutOfOffice && (
         <Alert variant="destructive">
           <AlertCircleIcon />
-          <AlertTitle>
-            Mohon nyalain izin lokasi dan kamera di perangkat anda.
-          </AlertTitle>
+          <AlertTitle>Di luar area kantor</AlertTitle>
+          <AlertDescription>
+            Anda berada {distance?.toFixed(0)} m dari kantor. Hanya izin dan
+            tidak hadir yang diperbolehkan.
+          </AlertDescription>
         </Alert>
       )}
 
       <div className="grid md:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle>Check In</CardTitle>
+            <CardTitle className="flex justify-between items-center">
+              Check In
+              <Button
+                onClick={() => openAttendanceDialog('CheckIn')}
+                disabled={!canCheckIn}
+              >
+                Absen
+              </Button>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {isAttendanceLoading ? (
@@ -529,7 +498,15 @@ export default function AttendancePage() {
           <>
             <Card>
               <CardHeader>
-                <CardTitle>Field</CardTitle>
+                <CardTitle className="flex justify-between items-center">
+                  Field
+                  <Button
+                    onClick={() => openAttendanceDialog('FieldCheckIn')}
+                    disabled={!canFieldCheckIn}
+                  >
+                    Absen
+                  </Button>
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {isAttendanceLoading ? (
@@ -556,7 +533,15 @@ export default function AttendancePage() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Return</CardTitle>
+                <CardTitle className="flex justify-between items-center">
+                  Return
+                  <Button
+                    onClick={() => openAttendanceDialog('FieldCheckOut')}
+                    disabled={!canFieldCheckOut}
+                  >
+                    Absen
+                  </Button>
+                </CardTitle>
               </CardHeader>
               <CardContent>
                 {isAttendanceLoading ? (
@@ -587,7 +572,15 @@ export default function AttendancePage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Check Out</CardTitle>
+            <CardTitle className="flex justify-between items-center">
+              Check Out
+              <Button
+                onClick={() => openAttendanceDialog('CheckOut')}
+                disabled={!canCheckOut}
+              >
+                Absen
+              </Button>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             {isAttendanceLoading ? (
@@ -617,6 +610,112 @@ export default function AttendancePage() {
           </CardContent>
         </Card>
       </div>
+
+      {!hasCheckedIn && (
+        <div className="mx-auto">
+          <Dialog open={leaveDialog} onOpenChange={setLeaveDialog}>
+            <DialogTrigger asChild>
+              <Button
+                variant="destructive"
+                className="min-w-[156px]"
+                disabled={!!leave}
+              >
+                Tidak hadir
+              </Button>
+            </DialogTrigger>
+
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  Yakin absen tidak hadir? Pilih alasannya.
+                </DialogTitle>
+              </DialogHeader>
+
+              <Field>
+                <Select onValueChange={(e) => setLeaveType(e)}>
+                  <SelectTrigger className="w-[256px]">
+                    <SelectValue placeholder="Pilih alasan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="Sick">Sakit</SelectItem>
+                      <SelectItem value="Leave">Cuti</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+
+                <FieldLabel>Keterangan</FieldLabel>
+                <Input
+                  value={leaveRemarks}
+                  onChange={(e) => setLeaveRemarks(e.target.value)}
+                />
+              </Field>
+
+              <Button
+                onClick={onLeaveSubmit}
+                disabled={leaveMutation.isPending}
+              >
+                {leaveMutation.isPending && (
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Submit
+              </Button>
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
+
+      {attendance && !leave && (
+        <div className="mx-auto">
+          <Dialog open={earlyLeaveDialog} onOpenChange={setEarlyLeaveDialog}>
+            <DialogTrigger asChild>
+              <Button
+                disabled={!!earlyLeave || hasCheckedOut}
+                variant="secondary"
+                className="min-w-[156px]"
+              >
+                Izin
+              </Button>
+            </DialogTrigger>
+
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Yakin izin? Pilih alasannya.</DialogTitle>
+              </DialogHeader>
+
+              <Field>
+                <Select onValueChange={(e) => setEarlyLeaveType(e)}>
+                  <SelectTrigger className="w-[256px]">
+                    <SelectValue placeholder="Pilih alasan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="Time">Waktu Kerja</SelectItem>
+                      <SelectItem value="Early">Pulang Cepat</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+
+                <FieldLabel>Keterangan</FieldLabel>
+                <Input
+                  value={earlyLeaveRemarks}
+                  onChange={(e) => setEarlyLeaveRemarks(e.target.value)}
+                />
+              </Field>
+
+              <Button
+                onClick={onEarlyLeaveSubmit}
+                disabled={earlyLeaveMutation.isPending}
+              >
+                {earlyLeaveMutation.isPending && (
+                  <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+                )}
+                Submit
+              </Button>
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
     </div>
   );
 }

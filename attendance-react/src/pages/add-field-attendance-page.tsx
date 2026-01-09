@@ -1,5 +1,5 @@
 import Camera from '@/components/camera';
-import { Alert, AlertTitle } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -14,7 +14,6 @@ import {
   FieldLabel,
 } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
-import { Spinner } from '@/components/ui/spinner';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/auth-context';
 import { useGeolocation } from '@/hooks/use-geolocation';
@@ -39,6 +38,7 @@ const formSchema = z.object({
 export default function AddFieldAttendancePage() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [openDialog, setOpenDialog] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
   const { getLocation } = useGeolocation();
   const {
@@ -63,8 +63,6 @@ export default function AddFieldAttendancePage() {
     },
   });
 
-  const isSubmitting = mutation.isPending;
-
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -79,27 +77,35 @@ export default function AddFieldAttendancePage() {
     personInCharge,
     remarks,
   }: z.infer<typeof formSchema>) => {
-    const response = await fetch(capturedImage!);
-    const blob = await response.blob();
-    const file = new File([blob], `attendance-${Date.now()}.jpg`, {
-      type: 'image/jpeg',
-    });
+    try {
+      setIsSubmitting(true);
 
-    const coords = await getLocation();
+      const response = await fetch(capturedImage!);
+      const blob = await response.blob();
+      const file = new File([blob], `attendance-${Date.now()}.jpg`, {
+        type: 'image/jpeg',
+      });
 
-    const currentDate = format(new Date(), 'yyyy-MM-dd');
-    const currentTime = format(new Date(), 'HH:mm:ss');
+      const coords = await getLocation();
 
-    mutation.mutate({
-      userId: user!.id,
-      date: currentDate,
-      customer,
-      personInCharge,
-      image: file,
-      remarks: remarks ?? null,
-      time: currentTime,
-      location: coords,
-    });
+      const currentDate = format(new Date(), 'yyyy-MM-dd');
+      const currentTime = format(new Date(), 'HH:mm:ss');
+
+      mutation.mutate({
+        userId: user!.id,
+        date: currentDate,
+        customer,
+        personInCharge,
+        image: file,
+        remarks: remarks ?? null,
+        time: currentTime,
+        location: coords,
+      });
+    } catch (error) {
+      toast.error(error.message || 'Gagal submit absen lapangan.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   useEffect(() => {
@@ -160,7 +166,13 @@ export default function AddFieldAttendancePage() {
         />
 
         {isPermissionsLoading ? (
-          <Spinner className="mx-auto size-12" />
+          <Alert>
+            <Loader2Icon className="h-4 w-4 animate-spin" />
+            <AlertTitle>Mengecek izin</AlertTitle>
+            <AlertDescription>
+              Memastikan kamera sama lokasi dinyalakan...
+            </AlertDescription>
+          </Alert>
         ) : isGranted ? (
           <>
             <Dialog
@@ -173,13 +185,20 @@ export default function AddFieldAttendancePage() {
                 }
               }}
             >
-              <Button type='button' className="mx-auto min-w-[156px]" onClick={async () => {
-                  const isValid = await form.trigger(['customer', 'personInCharge']);
+              <Button
+                type="button"
+                className="mx-auto min-w-[156px]"
+                onClick={async () => {
+                  const isValid = await form.trigger([
+                    'customer',
+                    'personInCharge',
+                  ]);
 
                   if (isValid) {
                     setOpenDialog(true);
                   }
-              }}>
+                }}
+              >
                 Ambil foto
               </Button>
               <DialogContent>
@@ -208,9 +227,9 @@ export default function AddFieldAttendancePage() {
                       disabled={!capturedImage || isSubmitting}
                     >
                       {isSubmitting && (
-                        <Loader2Icon className='mr-2 h-4 w-4 animate-spin' />
+                        <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
                       )}
-                      {isSubmitting ? 'Memproses...' : 'Tambah Lapangan'}
+                      Tambah Lapangan
                     </Button>
                   </>
                 )}
@@ -220,9 +239,10 @@ export default function AddFieldAttendancePage() {
         ) : (
           <Alert variant="destructive">
             <AlertCircleIcon />
-            <AlertTitle>
+            <AlertTitle>Izin dibutuhkan</AlertTitle>
+            <AlertDescription>
               Mohon nyalain izin lokasi dan kamera di perangkat anda.
-            </AlertTitle>
+            </AlertDescription>
           </Alert>
         )}
       </FieldGroup>

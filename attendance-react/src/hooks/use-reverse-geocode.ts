@@ -6,6 +6,6 @@ export function useReverseGeocode(lat: number | null, long: number | null) {
     queryKey: ['reverseGeocode', lat, long],
     queryFn: async () => reverseGeocode(lat!, long!),
     enabled: lat !== null && long !== null,
-    staleTime: 1000 * 60 * 10,
+    staleTime: Infinity,
   });
 }
