@@ -102,7 +102,11 @@ export default function AddFieldAttendancePage() {
         location: coords,
       });
     } catch (error) {
-      toast.error(error.message || 'Gagal submit absen lapangan.');
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error('Gagal submit absen lapangan.');
+      }
     } finally {
       setIsSubmitting(false);
     }

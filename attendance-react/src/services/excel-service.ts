@@ -65,6 +65,49 @@ export function exportMonthlyAttendanceToExcel(
   );
 }
 
+export function exportAbsentToExcel(
+  rows: any[],
+  departmentMap: Record<number, string>,
+  monthDate: { month: number; year: number },
+) {
+  const excelData = rows.map((row) => {
+    return {
+      Department: departmentMap[row.departmentId] ?? '-',
+      Nama: row.name,
+      Tanggal: format(row.date, 'dd/MM/yyyy'),
+      Waktu: row.time,
+      Alasan: row.type,
+      Keterangan: row.remarks ?? '-',
+    };
+  });
+
+  const worksheet = XLSX.utils.json_to_sheet(excelData);
+  worksheet['!cols'] = autoFitColumn(excelData);
+
+  const workbook = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Cuti/Izin');
+
+  const months = [
+    'Januari',
+    'Februari',
+    'Maret',
+    'April',
+    'Mei',
+    'Juni',
+    'Juli',
+    'Agustus',
+    'September',
+    'Oktober',
+    'November',
+    'Desember',
+  ];
+
+  XLSX.writeFile(
+    workbook,
+    `Cuti_Izin_${months[monthDate.month - 1]}-${monthDate.year}.xlsx`,
+  );
+}
+
 async function resolveLocations(rows: any[]) {
   const cache: Record<string, string> = {};
 

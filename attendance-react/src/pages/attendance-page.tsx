@@ -23,7 +23,6 @@ import { Spinner } from '@/components/ui/spinner';
 import { useAuth } from '@/contexts/auth-context';
 import { useGeolocation } from '@/hooks/use-geolocation';
 import { usePermissions } from '@/hooks/use-permissions';
-import { useReverseGeocode } from '@/hooks/use-reverse-geocode';
 import { haversineDistance } from '@/lib/distance';
 import {
   checkIn,
@@ -139,18 +138,6 @@ export default function AttendancePage() {
   const hasCheckedOut = events?.some(
     (e: { type: string }) => e.type === 'CheckOut',
   );
-
-  const { data: locationFieldCheckIn, isLoading: loadingFieldCheckIn } =
-    useReverseGeocode(
-      fieldCheckInEvent?.location?.[0] ?? null,
-      fieldCheckInEvent?.location?.[1] ?? null,
-    );
-
-  const { data: locationFieldCheckOut, isLoading: loadingFieldCheckOut } =
-    useReverseGeocode(
-      fieldCheckOutEvent?.location?.[0] ?? null,
-      fieldCheckOutEvent?.location?.[1] ?? null,
-    );
 
   const checkInMutation = useMutation({
     mutationFn: checkIn,
@@ -515,7 +502,11 @@ export default function AttendancePage() {
                   <>
                     <p>{fieldCheckInEvent.time}</p>
                     <p>
-                      {loadingFieldCheckIn ? 'Memuat...' : locationFieldCheckIn}
+                      {haversineDistance(
+                        fieldCheckInEvent.location[0],
+                        fieldCheckInEvent.location[1],
+                      ).toFixed(0)}{' '}
+                      m dari kantor
                     </p>
                     <img
                       src={`${import.meta.env.VITE_IMAGE_URL}/${
@@ -550,9 +541,11 @@ export default function AttendancePage() {
                   <>
                     <p>{fieldCheckOutEvent.time}</p>
                     <p>
-                      {loadingFieldCheckOut
-                        ? 'Memuat...'
-                        : locationFieldCheckOut}
+                      {haversineDistance(
+                        fieldCheckOutEvent.location[0],
+                        fieldCheckOutEvent.location[1],
+                      ).toFixed(0)}{' '}
+                      m dari kantor
                     </p>
                     <img
                       src={`${import.meta.env.VITE_IMAGE_URL}/${

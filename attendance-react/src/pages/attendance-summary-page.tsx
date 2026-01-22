@@ -11,11 +11,13 @@ import {
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useReverseGeocode } from '@/hooks/use-reverse-geocode';
 import { haversineDistance } from '@/lib/distance';
 import { getAttendances } from '@/services/attendance-service';
 import { getDepartments } from '@/services/department-service';
-import { exportMonthlyAttendanceToExcel } from '@/services/excel-service';
+import {
+  exportMonthlyAttendanceToExcel,
+  exportAbsentToExcel,
+} from '@/services/excel-service';
 import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
@@ -66,6 +68,11 @@ type AttendanceRow = {
   };
 };
 
+type Department = {
+  id: number;
+  name: string;
+};
+
 export default function AttendanceSummaryPage() {
   const [date, setDate] = useState(new Date());
   const [monthDate, setMonthDate] = useState({
@@ -88,7 +95,7 @@ export default function AttendanceSummaryPage() {
       ),
   });
 
-  const { data: departments } = useQuery({
+  const { data: departments } = useQuery<Department[]>({
     queryKey: ['departments'],
     queryFn: getDepartments,
   });
@@ -101,11 +108,6 @@ export default function AttendanceSummaryPage() {
       }, {}) ?? {}
     );
   }, [departments]);
-
-  const { data: location } = useReverseGeocode(
-    selectedEvent?.location?.[0] ?? null,
-    selectedEvent?.location?.[1] ?? null,
-  );
 
   const attendanceColumns: ColumnDef<AttendanceRow>[] = [
     {
@@ -334,13 +336,25 @@ export default function AttendanceSummaryPage() {
     }
   };
 
-  const handleExport = async () => {
+  const handleExportMonthlyAttendance = async () => {
     try {
       setIsExporting(true);
 
       await new Promise((r) => setTimeout(r, 0));
 
       exportMonthlyAttendanceToExcel(rows, departmentMap, monthDate);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportAbsentAttendance = async () => {
+    try {
+      setIsExporting(true);
+
+      await new Promise((r) => setTimeout(r, 0));
+
+      exportAbsentToExcel(rows, departmentMap, monthDate);
     } finally {
       setIsExporting(false);
     }
@@ -371,10 +385,19 @@ export default function AttendanceSummaryPage() {
         <Label htmlFor="absent">Filter ke tidak hadir / izin</Label>
       </div>
 
-      {activeDateTab === 'month' && !isAbsent && (
+      {activeDateTab === 'month' && isAbsent ? (
         <Button
           className="max-w-2xs"
-          onClick={handleExport}
+          onClick={handleExportAbsentAttendance}
+          disabled={isExporting || rows.length === 0}
+        >
+          {isExporting && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
+          Export ke Excel
+        </Button>
+      ) : (
+        <Button
+          className="max-w-2xs"
+          onClick={handleExportMonthlyAttendance}
           disabled={isExporting || rows.length === 0}
         >
           {isExporting && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
@@ -396,22 +419,14 @@ export default function AttendanceSummaryPage() {
                   <strong>Waktu:</strong> {selectedEvent.time}
                 </p>
 
-                {['FieldCheckIn', 'FieldCheckOut'].includes(
-                  selectedEvent.type,
-                ) ? (
-                  <p>
-                    <strong>Lokasi:</strong> {location ?? '-'}
-                  </p>
-                ) : (
-                  <p>
-                    <strong>Jarak dari kantor:</strong>{' '}
-                    {haversineDistance(
-                      selectedEvent?.location?.[0],
-                      selectedEvent?.location?.[1],
-                    ).toFixed(0)}{' '}
-                    m
-                  </p>
-                )}
+                <p>
+                  <strong>Jarak dari kantor:</strong>{' '}
+                  {haversineDistance(
+                    selectedEvent?.location?.[0],
+                    selectedEvent?.location?.[1],
+                  ).toFixed(0)}{' '}
+                  m
+                </p>
 
                 <img
                   src={`${import.meta.env.VITE_IMAGE_URL}/${

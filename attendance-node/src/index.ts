@@ -23,7 +23,8 @@ app.set('json spaces', 2);
 app.set('trust proxy', 1);
 
 app.use(morgan('dev'));
-/*
+
+/* comment this out for production only
 const allowedOrigins = ['http://localhost:5173'];
 
 const corsOptions: CorsOptions = {
