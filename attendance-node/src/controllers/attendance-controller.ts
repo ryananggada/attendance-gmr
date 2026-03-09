@@ -6,17 +6,19 @@ import { checkEvent } from '../models/check-event-model.js';
 import { user } from '../models/user-model.js';
 import { leave } from '../models/leave-model.js';
 import { earlyLeave } from '../models/early-leave-model.js';
+import { late } from '../models/late-model.js';
 
 const userColumns = getTableColumns(user);
 const attendanceColumns = getTableColumns(attendance);
 const checkEventColumns = getTableColumns(checkEvent);
 const leaveColumns = getTableColumns(leave);
 const earlyLeaveColumns = getTableColumns(earlyLeave);
+const lateColumns = getTableColumns(late);
 
 const { password, ...userWithoutPassword } = userColumns;
 
 export const checkIn = async (req: Request, res: Response) => {
-  const { userId, date, time, location } = req.body;
+  const { userId, date, time, location, remarks, isLate } = req.body;
 
   await db.transaction(async (tx) => {
     const [insertedAttendance] = await tx
@@ -34,6 +36,13 @@ export const checkIn = async (req: Request, res: Response) => {
       location,
       image: req.file!.filename,
     });
+
+    if (isLate) {
+      await tx.insert(late).values({
+        attendanceId: insertedAttendance!.id,
+        remarks,
+      });
+    }
   });
 
   res.status(201).json({ message: 'Check in berhasil!' });
@@ -192,7 +201,8 @@ export const getSingleAttendance = async (req: Request, res: Response) => {
     )
     .leftJoin(checkEvent, eq(checkEvent.attendanceId, attendance.id))
     .leftJoin(leave, eq(leave.attendanceId, attendance.id))
-    .leftJoin(earlyLeave, eq(earlyLeave.attendanceId, attendance.id));
+    .leftJoin(earlyLeave, eq(earlyLeave.attendanceId, attendance.id))
+    .leftJoin(late, eq(late.attendanceId, attendance.id));
 
   if (rows.length === 0) return res.json(null);
 
@@ -203,6 +213,7 @@ export const getSingleAttendance = async (req: Request, res: Response) => {
     checkEvent: rows.map((r) => r.checkEvent).filter((ev) => ev !== null),
     leave: rows[0]?.leave,
     earlyLeave: rows[0]?.earlyLeave,
+    late: rows[0]?.late,
   };
 
   return res.json(response);
@@ -233,13 +244,15 @@ export const getAttendances = async (req: Request, res: Response) => {
         checkEvent: checkEventColumns,
         leave: leaveColumns,
         earlyLeave: earlyLeaveColumns,
+        late: lateColumns,
       })
       .from(attendance)
       .where(eq(attendance.date, day))
       .innerJoin(user, eq(user.id, attendance.userId))
       .leftJoin(checkEvent, eq(checkEvent.attendanceId, attendance.id))
       .leftJoin(leave, eq(leave.attendanceId, attendance.id))
-      .leftJoin(earlyLeave, eq(earlyLeave.attendanceId, attendance.id));
+      .leftJoin(earlyLeave, eq(earlyLeave.attendanceId, attendance.id))
+      .leftJoin(late, eq(late.attendanceId, attendance.id));
   }
 
   if (month) {
@@ -258,6 +271,7 @@ export const getAttendances = async (req: Request, res: Response) => {
         checkEvent: checkEventColumns,
         leave: leaveColumns,
         earlyLeave: earlyLeaveColumns,
+        late: lateColumns,
       })
       .from(attendance)
       .where(
@@ -267,7 +281,8 @@ export const getAttendances = async (req: Request, res: Response) => {
       .innerJoin(user, eq(user.id, attendance.userId))
       .leftJoin(checkEvent, eq(checkEvent.attendanceId, attendance.id))
       .leftJoin(leave, eq(leave.attendanceId, attendance.id))
-      .leftJoin(earlyLeave, eq(earlyLeave.attendanceId, attendance.id));
+      .leftJoin(earlyLeave, eq(earlyLeave.attendanceId, attendance.id))
+      .leftJoin(late, eq(late.attendanceId, attendance.id));
   }
 
   if (!rows || rows.length === 0) {
@@ -275,27 +290,32 @@ export const getAttendances = async (req: Request, res: Response) => {
   }
 
   const grouped = Object.values(
-    rows.reduce((acc, row) => {
-      const a = row.attendance;
-      const u = row.user;
-      const ev = row.checkEvent;
-      const l = row.leave;
-      const el = row.earlyLeave;
+    rows.reduce(
+      (acc, row) => {
+        const a = row.attendance;
+        const u = row.user;
+        const ev = row.checkEvent;
+        const l = row.leave;
+        const el = row.earlyLeave;
+        const la = row.late;
 
-      if (!acc[a.id]) {
-        acc[a.id] = {
-          attendance: a,
-          user: u,
-          checkEvent: [],
-          leave: l,
-          earlyLeave: el,
-        };
-      }
+        if (!acc[a.id]) {
+          acc[a.id] = {
+            attendance: a,
+            user: u,
+            checkEvent: [],
+            leave: l,
+            earlyLeave: el,
+            late: la,
+          };
+        }
 
-      if (ev) acc[a.id].checkEvent.push(ev);
+        if (ev) acc[a.id].checkEvent.push(ev);
 
-      return acc;
-    }, {} as Record<number, any>),
+        return acc;
+      },
+      {} as Record<number, any>,
+    ),
   );
 
   return res.json(grouped);

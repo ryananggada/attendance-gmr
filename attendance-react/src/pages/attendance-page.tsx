@@ -34,7 +34,7 @@ import {
   submitLeave,
 } from '@/services/attendance-service';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { format } from 'date-fns';
+import { format, set } from 'date-fns';
 import { AlertCircleIcon, CheckCircle2Icon, Loader2Icon } from 'lucide-react';
 import { useState, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
@@ -46,12 +46,22 @@ type AttendanceType =
   | 'CheckOut'
   | null;
 
+type AttendanceStep = 'remarks' | 'camera' | 'preview';
+
 export default function AttendancePage() {
   const [capturedImage, setCapturedImage] = useState<string | null>(null);
   const [attendanceType, setAttendanceType] = useState<AttendanceType>(null);
+  const [step, setStep] = useState<AttendanceStep>('camera');
 
   const openAttendanceDialog = (type: AttendanceType) => {
     setAttendanceType(type);
+
+    if (type === 'CheckIn' && isLate) {
+      setStep('remarks');
+    } else {
+      setStep('camera');
+    }
+
     setOpenDialog(true);
   };
 
@@ -65,7 +75,16 @@ export default function AttendancePage() {
     requestLocation,
   } = usePermissions();
   const { user } = useAuth();
-  const date = format(new Date(), 'yyyy-MM-dd');
+
+  const now = new Date();
+  const date = format(now, 'yyyy-MM-dd');
+  const lateLimit = set(now, {
+    hours: 8,
+    minutes: 0,
+    seconds: 59,
+    milliseconds: 999,
+  });
+  const isLate = now > lateLimit;
 
   const [openDialog, setOpenDialog] = useState(false);
   const [leaveDialog, setLeaveDialog] = useState(false);
@@ -75,6 +94,7 @@ export default function AttendancePage() {
   const [leaveRemarks, setLeaveRemarks] = useState('');
   const [earlyLeaveType, setEarlyLeaveType] = useState('');
   const [earlyLeaveRemarks, setEarlyLeaveRemarks] = useState('');
+  const [lateRemarks, setLateRemarks] = useState('');
 
   const [distance, setDistance] = useState<number | null>(null);
   const [distanceLoading, setDistanceLoading] = useState(true);
@@ -244,12 +264,14 @@ export default function AttendancePage() {
       });
       const coords = await getLocation();
 
-      const payload = {
+      let payload = {
         userId: user!.id,
         date: format(new Date(), 'yyyy-MM-dd'),
         time: format(new Date(), 'HH:mm:ss'),
         location: coords,
         image: file,
+        isLate,
+        remarks: isLate ? lateRemarks : undefined,
       };
 
       if (attendanceType === 'CheckIn') {
@@ -345,16 +367,58 @@ export default function AttendancePage() {
 
           if (!isOpen) {
             setCapturedImage('');
+            setLateRemarks('');
+            setStep('camera');
           }
         }}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Absen</DialogTitle>
+            <DialogTitle>
+              {step === 'remarks'
+                ? 'Anda Telat - Isi Keterangan'
+                : step === 'camera'
+                  ? 'Ambil Foto Absen'
+                  : 'Konfirmasi Absen'}
+            </DialogTitle>
           </DialogHeader>
 
-          {!capturedImage && <Camera setCapturedImage={setCapturedImage} />}
-          {capturedImage && (
+          {step === 'remarks' && (
+            <>
+              <Field>
+                <FieldLabel>Keterangan Telat</FieldLabel>
+                <Input
+                  value={lateRemarks}
+                  onChange={(e) => setLateRemarks(e.target.value)}
+                />
+                {!lateRemarks.trim() && (
+                  <p className="text-sm text-red-500 mt-1">
+                    Keterangan wajib diisi
+                  </p>
+                )}
+              </Field>
+
+              <Button
+                className="mt-4"
+                disabled={!lateRemarks.trim()}
+                onClick={() => setStep('camera')}
+              >
+                Lanjut
+              </Button>
+            </>
+          )}
+
+          {step === 'camera' && (
+            <Camera
+              setCapturedImage={(img) => {
+                setCapturedImage(img);
+                setStep('preview');
+              }}
+            />
+          )}
+
+          {/* STEP 3: PREVIEW */}
+          {step === 'preview' && capturedImage && (
             <>
               <div className="w-full max-w-md mx-auto">
                 <div className="aspect-[3/4] bg-black rounded overflow-hidden">
@@ -642,11 +706,18 @@ export default function AttendancePage() {
                   value={leaveRemarks}
                   onChange={(e) => setLeaveRemarks(e.target.value)}
                 />
+                {!leaveRemarks.trim() && (
+                  <p className="text-sm text-red-500 mt-1">
+                    Keterangan wajib diisi
+                  </p>
+                )}
               </Field>
 
               <Button
                 onClick={onLeaveSubmit}
-                disabled={leaveMutation.isPending}
+                disabled={
+                  leaveMutation.isPending || !leaveType || !leaveRemarks.trim()
+                }
               >
                 {leaveMutation.isPending && (
                   <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
@@ -694,11 +765,21 @@ export default function AttendancePage() {
                   value={earlyLeaveRemarks}
                   onChange={(e) => setEarlyLeaveRemarks(e.target.value)}
                 />
+
+                {!earlyLeaveRemarks.trim() && (
+                  <p className="text-sm text-red-500 mt-1">
+                    Keterangan wajib diisi
+                  </p>
+                )}
               </Field>
 
               <Button
                 onClick={onEarlyLeaveSubmit}
-                disabled={earlyLeaveMutation.isPending}
+                disabled={
+                  earlyLeaveMutation.isPending ||
+                  !earlyLeaveType ||
+                  !earlyLeaveRemarks.trim()
+                }
               >
                 {earlyLeaveMutation.isPending && (
                   <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />

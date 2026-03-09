@@ -4,6 +4,8 @@ type CreateAttendanceType = {
   time: string;
   location: { latitude: number; longitude: number };
   image: File;
+  isLate?: boolean;
+  remarks?: string;
 };
 
 type LeaveType = {
@@ -22,6 +24,8 @@ export const checkIn = async ({
   time,
   location,
   image,
+  isLate = false,
+  remarks,
 }: CreateAttendanceType) => {
   const formData = new FormData();
   formData.append('userId', String(userId));
@@ -32,6 +36,8 @@ export const checkIn = async ({
     JSON.stringify([location!.latitude, location!.longitude]),
   );
   formData.append('image', image!);
+  formData.append('isLate', String(isLate ?? false));
+  formData.append('remarks', remarks ?? '');
 
   const response = await fetch(`${baseUrl}/check-in`, {
     method: 'POST',

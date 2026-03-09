@@ -20,6 +20,8 @@ export const createAttendanceSchema = z.object({
       (val) => val.length === 2,
       'Lokasi harus di format [latitude, longitude]',
     ),
+  isLate: z.coerce.boolean().optional(),
+  remarks: z.string().optional(),
 });
 
 export const leaveSchema = z.object({

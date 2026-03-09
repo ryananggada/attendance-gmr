@@ -53,6 +53,7 @@ type RawAttendanceData = {
   ];
   leave: RawLeave | null;
   earlyLeave: RawLeave | null;
+  late: { id: number; attendanceId: number; remarks: string } | null;
 };
 
 type AttendanceRow = {
@@ -65,6 +66,9 @@ type AttendanceRow = {
     FieldCheckIn?: EventDetail;
     FieldCheckOut?: EventDetail;
     CheckOut?: EventDetail;
+  };
+  late?: {
+    remarks: string;
   };
 };
 
@@ -84,6 +88,8 @@ export default function AttendanceSummaryPage() {
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
+  const showExport = activeDateTab === 'month';
+
   const { data: attendances, isLoading } = useQuery({
     queryKey: ['attendances', date, monthDate, activeDateTab],
     queryFn: () =>
@@ -94,6 +100,8 @@ export default function AttendanceSummaryPage() {
           : `${monthDate.year}-${String(monthDate.month).padStart(2, '0')}`,
       ),
   });
+
+  console.log(attendances);
 
   const { data: departments } = useQuery<Department[]>({
     queryKey: ['departments'],
@@ -120,7 +128,7 @@ export default function AttendanceSummaryPage() {
         const event = row.original.events.CheckIn;
         return (
           <Button
-            className="p-0 text-black"
+            className={`p-0 ${row.original.late ? 'text-red-600' : 'text-black'}`}
             variant="link"
             disabled={!event}
             onClick={() => setSelectedEvent(event ?? null)}
@@ -176,6 +184,14 @@ export default function AttendanceSummaryPage() {
             {event ? event.time : '-'}
           </Button>
         );
+      },
+    },
+    {
+      header: 'Alasan Telat',
+      cell: ({ row }) => {
+        const late = row.original.late;
+
+        return <>{late ? late.remarks : '-'}</>;
       },
     },
   ];
@@ -294,6 +310,7 @@ export default function AttendanceSummaryPage() {
           checkEvent: any[];
           attendance: { id: number; date: string };
           user: { fullName: string; departmentId: number };
+          late?: { remarks: string };
         }) => {
           const events = {
             CheckIn: a.checkEvent.find(
@@ -316,6 +333,7 @@ export default function AttendanceSummaryPage() {
             departmentId: a.user.departmentId,
             date: a.attendance.date,
             events,
+            late: a.late,
           };
         },
       );
@@ -385,25 +403,30 @@ export default function AttendanceSummaryPage() {
         <Label htmlFor="absent">Filter ke tidak hadir / izin</Label>
       </div>
 
-      {activeDateTab === 'month' && isAbsent ? (
-        <Button
-          className="max-w-2xs"
-          onClick={handleExportAbsentAttendance}
-          disabled={isExporting || rows.length === 0}
-        >
-          {isExporting && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
-          Export ke Excel
-        </Button>
-      ) : (
-        <Button
-          className="max-w-2xs"
-          onClick={handleExportMonthlyAttendance}
-          disabled={isExporting || rows.length === 0}
-        >
-          {isExporting && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
-          Export ke Excel
-        </Button>
-      )}
+      {showExport &&
+        (isAbsent ? (
+          <Button
+            className="max-w-2xs"
+            onClick={handleExportAbsentAttendance}
+            disabled={isExporting || rows.length === 0}
+          >
+            {isExporting && (
+              <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            Export ke Excel
+          </Button>
+        ) : (
+          <Button
+            className="max-w-2xs"
+            onClick={handleExportMonthlyAttendance}
+            disabled={isExporting || rows.length === 0}
+          >
+            {isExporting && (
+              <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            Export ke Excel
+          </Button>
+        ))}
 
       <Dialog
         open={!!selectedEvent}

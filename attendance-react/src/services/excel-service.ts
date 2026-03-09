@@ -35,6 +35,7 @@ export function exportMonthlyAttendanceToExcel(
       Field: events.FieldCheckIn?.time ?? '-',
       Return: events.FieldCheckOut?.time ?? '-',
       'Check Out': events.CheckOut?.time ?? '-',
+      'Alasan Telat': row.late?.remarks ?? '-',
     };
   });
 
@@ -85,7 +86,7 @@ export function exportAbsentToExcel(
   worksheet['!cols'] = autoFitColumn(excelData);
 
   const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Cuti/Izin');
+  XLSX.utils.book_append_sheet(workbook, worksheet, 'Cuti-Izin');
 
   const months = [
     'Januari',
