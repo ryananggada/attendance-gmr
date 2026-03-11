@@ -227,11 +227,6 @@ export default function AttendanceSummaryPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeDateTab, departmentMap]);
 
-  /*
-  const hasAttendanceEvent = (item: RawAttendanceData) =>
-    Array.isArray(item.checkEvent) && item.checkEvent.length > 0;
-  */
-
   const rows = useMemo(() => {
     if (!attendances) return [];
 
