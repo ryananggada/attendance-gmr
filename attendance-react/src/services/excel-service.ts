@@ -35,7 +35,10 @@ export function exportMonthlyAttendanceToExcel(
       Field: events.FieldCheckIn?.time ?? '-',
       Return: events.FieldCheckOut?.time ?? '-',
       'Check Out': events.CheckOut?.time ?? '-',
-      'Alasan Telat': row.late?.remarks ?? '-',
+      'Keterangan Telat': row.late?.remarks ?? '-',
+      'Waktu Tidak Hadir/Izin': row.absent?.time ?? '-',
+      'Alasan Tidak Hadir/Izin': row.absent?.type ?? '-',
+      'Keterangan Tidak Hadir/Izin': row.absent?.remarks ?? '-',
     };
   });
 
@@ -63,49 +66,6 @@ export function exportMonthlyAttendanceToExcel(
   XLSX.writeFile(
     workbook,
     `Absen_${months[monthDate.month - 1]}-${monthDate.year}.xlsx`,
-  );
-}
-
-export function exportAbsentToExcel(
-  rows: any[],
-  departmentMap: Record<number, string>,
-  monthDate: { month: number; year: number },
-) {
-  const excelData = rows.map((row) => {
-    return {
-      Department: departmentMap[row.departmentId] ?? '-',
-      Nama: row.name,
-      Tanggal: format(row.date, 'dd/MM/yyyy'),
-      Waktu: row.time,
-      Alasan: row.type,
-      Keterangan: row.remarks ?? '-',
-    };
-  });
-
-  const worksheet = XLSX.utils.json_to_sheet(excelData);
-  worksheet['!cols'] = autoFitColumn(excelData);
-
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Cuti-Izin');
-
-  const months = [
-    'Januari',
-    'Februari',
-    'Maret',
-    'April',
-    'Mei',
-    'Juni',
-    'Juli',
-    'Agustus',
-    'September',
-    'Oktober',
-    'November',
-    'Desember',
-  ];
-
-  XLSX.writeFile(
-    workbook,
-    `Cuti_Izin_${months[monthDate.month - 1]}-${monthDate.year}.xlsx`,
   );
 }
 

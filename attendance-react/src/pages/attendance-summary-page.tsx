@@ -8,16 +8,11 @@ import {
   DialogDescription,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { haversineDistance } from '@/lib/distance';
 import { getAttendances } from '@/services/attendance-service';
 import { getDepartments } from '@/services/department-service';
-import {
-  exportMonthlyAttendanceToExcel,
-  exportAbsentToExcel,
-} from '@/services/excel-service';
+import { exportMonthlyAttendanceToExcel } from '@/services/excel-service';
 import { useQuery } from '@tanstack/react-query';
 import type { ColumnDef } from '@tanstack/react-table';
 import { format } from 'date-fns';
@@ -61,13 +56,12 @@ type AttendanceRow = {
   name: string;
   departmentId: number;
   date: string;
-  events: {
-    CheckIn?: EventDetail;
-    FieldCheckIn?: EventDetail;
-    FieldCheckOut?: EventDetail;
-    CheckOut?: EventDetail;
-  };
-  late?: {
+  events: any;
+  late?: { remarks: string };
+  absent?: {
+    date: string;
+    time: string;
+    type: string;
     remarks: string;
   };
 };
@@ -84,7 +78,6 @@ export default function AttendanceSummaryPage() {
     year: new Date().getFullYear(),
   });
   const [activeDateTab, setActiveDateTab] = useState<'day' | 'month'>('day');
-  const [isAbsent, setIsAbsent] = useState<boolean>(false);
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
   const [isExporting, setIsExporting] = useState(false);
 
@@ -101,8 +94,6 @@ export default function AttendanceSummaryPage() {
       ),
   });
 
-  console.log(attendances);
-
   const { data: departments } = useQuery<Department[]>({
     queryKey: ['departments'],
     queryFn: getDepartments,
@@ -118,6 +109,13 @@ export default function AttendanceSummaryPage() {
   }, [departments]);
 
   const attendanceColumns: ColumnDef<AttendanceRow>[] = [
+    {
+      header: 'Department',
+      cell: ({ row }) => {
+        const departmentId = row.original.departmentId;
+        return departmentMap[departmentId] ?? '-';
+      },
+    },
     {
       header: 'Nama',
       accessorKey: 'name',
@@ -187,157 +185,101 @@ export default function AttendanceSummaryPage() {
       },
     },
     {
-      header: 'Alasan Telat',
+      header: 'Keterangan Telat',
       cell: ({ row }) => {
         const late = row.original.late;
 
         return <>{late ? late.remarks : '-'}</>;
       },
     },
-  ];
-
-  const absentColumns: ColumnDef<AbsentRow>[] = [
     {
-      header: 'Department',
+      header: 'Waktu Tidak Hadir/Izin',
       cell: ({ row }) => {
-        const departmentId = row.original.departmentId;
-        return departmentMap[departmentId] ?? '-';
+        return row.original.absent?.time ?? '-';
       },
     },
     {
-      header: 'Nama',
-      accessorKey: 'name',
+      header: 'Tipe Tidak Hadir/Izin',
+      cell: ({ row }) => {
+        return row.original.absent?.type ?? '-';
+      },
     },
     {
-      header: 'Tanggal',
-      accessorKey: 'date',
-      cell: ({ row }) => format(new Date(row.original.date), 'dd/MM/yyyy'),
-    },
-    {
-      header: 'Waktu',
-      accessorKey: 'time',
-    },
-    {
-      header: 'Alasan',
-      accessorKey: 'type',
-    },
-    {
-      header: 'Keterangan',
-      accessorKey: 'remarks',
+      header: 'Keterangan Tidak Hadir/Izin',
+      cell: ({ row }) => {
+        return row.original.absent?.remarks ?? '-';
+      },
     },
   ];
 
-  const columns: ColumnDef<AttendanceRow>[] | ColumnDef<AbsentRow>[] =
-    useMemo(() => {
-      if (isAbsent) {
-        return absentColumns;
-      }
+  const columns: ColumnDef<AttendanceRow>[] = useMemo(() => {
+    const base = [...attendanceColumns];
 
-      const base = [...attendanceColumns];
+    if (activeDateTab === 'month') {
+      base.splice(2, 0, {
+        accessorKey: 'date',
+        header: 'Tanggal',
+        cell: ({ row }) => format(new Date(row.original.date), 'dd/MM/yyyy'),
+      });
+    }
 
-      if (activeDateTab === 'month') {
-        base.splice(0, 0, {
-          header: 'Department',
-          cell: ({ row }) => {
-            const departmentId = row.original.departmentId;
-            return departmentMap[departmentId] ?? '-';
-          },
-        });
+    return base;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDateTab, departmentMap]);
 
-        base.splice(2, 0, {
-          accessorKey: 'date',
-          header: 'Tanggal',
-          cell: ({ row }) => format(new Date(row.original.date), 'dd/MM/yyyy'),
-        });
-      }
-
-      return base;
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [isAbsent, activeDateTab]);
-
+  /*
   const hasAttendanceEvent = (item: RawAttendanceData) =>
     Array.isArray(item.checkEvent) && item.checkEvent.length > 0;
+  */
 
   const rows = useMemo(() => {
     if (!attendances) return [];
 
-    if (isAbsent) {
-      return attendances
-        .filter(
-          (item: { leave: null; earlyLeave: null }) =>
-            item.leave !== null || item.earlyLeave !== null,
-        )
-        .map((item: RawAttendanceData) => {
-          const absent = item.leave ?? item.earlyLeave!;
-          let type = absent.type;
+    return attendances.map((item: RawAttendanceData) => {
+      const events = {
+        CheckIn: item.checkEvent?.find((e) => e.type === 'CheckIn'),
+        FieldCheckIn: item.checkEvent?.find((e) => e.type === 'FieldCheckIn'),
+        FieldCheckOut: item.checkEvent?.find((e) => e.type === 'FieldCheckOut'),
+        CheckOut: item.checkEvent?.find((e) => e.type === 'CheckOut'),
+      };
 
-          switch (type) {
-            case 'Sick':
-              type = 'Sakit';
-              break;
-            case 'Leave':
-              type = 'Cuti';
-              break;
-            case 'Time':
-              type = 'Waktu Kerja';
-              break;
-            case 'Early':
-              type = 'Pulang Awal';
-              break;
-            default:
-              type = '';
-          }
+      const absent = item.leave ?? item.earlyLeave;
 
-          return {
-            id: item.attendance.id,
-            name: item.user.fullName,
-            departmentId: item.user.departmentId,
-            date: item.attendance.date,
-            time: absent.time,
-            type,
-            remarks: absent.remarks ?? '',
-          };
-        });
-    }
+      let type = absent?.type;
 
-    return attendances
-      .filter(
-        (item: RawAttendanceData) =>
-          hasAttendanceEvent(item) && item.leave === null,
-      )
-      .map(
-        (a: {
-          checkEvent: any[];
-          attendance: { id: number; date: string };
-          user: { fullName: string; departmentId: number };
-          late?: { remarks: string };
-        }) => {
-          const events = {
-            CheckIn: a.checkEvent.find(
-              (e: { type: string }) => e.type === 'CheckIn',
-            ),
-            FieldCheckIn: a.checkEvent.find(
-              (e: { type: string }) => e.type === 'FieldCheckIn',
-            ),
-            FieldCheckOut: a.checkEvent.find(
-              (e: { type: string }) => e.type === 'FieldCheckOut',
-            ),
-            CheckOut: a.checkEvent.find(
-              (e: { type: string }) => e.type === 'CheckOut',
-            ),
-          };
+      switch (type) {
+        case 'Sick':
+          type = 'Sakit';
+          break;
+        case 'Leave':
+          type = 'Cuti';
+          break;
+        case 'Time':
+          type = 'Waktu Kerja';
+          break;
+        case 'Early':
+          type = 'Pulang Awal';
+          break;
+      }
 
-          return {
-            id: a.attendance.id,
-            name: a.user.fullName,
-            departmentId: a.user.departmentId,
-            date: a.attendance.date,
-            events,
-            late: a.late,
-          };
-        },
-      );
-  }, [attendances, isAbsent]);
+      return {
+        id: item.attendance.id,
+        name: item.user.fullName,
+        departmentId: item.user.departmentId,
+        date: item.attendance.date,
+        events,
+        late: item.late,
+        absent: absent
+          ? {
+              date: item.attendance.date,
+              time: absent.time,
+              type,
+              remarks: absent.remarks ?? '',
+            }
+          : undefined,
+      };
+    });
+  }, [attendances]);
 
   const renderDialogTitle = (type: string) => {
     switch (type) {
@@ -366,18 +308,6 @@ export default function AttendanceSummaryPage() {
     }
   };
 
-  const handleExportAbsentAttendance = async () => {
-    try {
-      setIsExporting(true);
-
-      await new Promise((r) => setTimeout(r, 0));
-
-      exportAbsentToExcel(rows, departmentMap, monthDate);
-    } finally {
-      setIsExporting(false);
-    }
-  };
-
   return (
     <div className="flex flex-1 flex-col gap-4">
       <Tabs
@@ -398,35 +328,16 @@ export default function AttendanceSummaryPage() {
         </TabsContent>
       </Tabs>
 
-      <div className="flex gap-2">
-        <Switch id="absent" checked={isAbsent} onCheckedChange={setIsAbsent} />
-        <Label htmlFor="absent">Filter ke tidak hadir / izin</Label>
-      </div>
-
-      {showExport &&
-        (isAbsent ? (
-          <Button
-            className="max-w-2xs"
-            onClick={handleExportAbsentAttendance}
-            disabled={isExporting || rows.length === 0}
-          >
-            {isExporting && (
-              <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-            )}
-            Export ke Excel
-          </Button>
-        ) : (
-          <Button
-            className="max-w-2xs"
-            onClick={handleExportMonthlyAttendance}
-            disabled={isExporting || rows.length === 0}
-          >
-            {isExporting && (
-              <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />
-            )}
-            Export ke Excel
-          </Button>
-        ))}
+      {showExport && (
+        <Button
+          className="max-w-2xs"
+          onClick={handleExportMonthlyAttendance}
+          disabled={isExporting || rows.length === 0}
+        >
+          {isExporting && <Loader2Icon className="mr-2 h-4 w-4 animate-spin" />}
+          Export ke Excel
+        </Button>
+      )}
 
       <Dialog
         open={!!selectedEvent}
