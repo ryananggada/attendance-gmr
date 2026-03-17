@@ -38,12 +38,6 @@ export default function App() {
         <Route
           element={<LoggedInLayout allowedRoles={['Super Admin', 'Admin']} />}
         >
-          <Route path="users" element={<UsersListPage />} />
-          <Route path="users/create" element={<AddUserPage />} />
-          <Route path="users/:id/edit" element={<EditUserPage />} />
-          <Route path="departments" element={<DepartmentsListPage />} />
-          <Route path="departments/create" element={<AddDepartmentPage />} />
-          <Route path="departments/:id/edit" element={<EditDepartmentPage />} />
           <Route
             path="attendance-summary"
             element={<AttendanceSummaryPage />}
@@ -52,6 +46,15 @@ export default function App() {
             path="field-attendance-summary"
             element={<FieldAttendanceSummaryPage />}
           />
+        </Route>
+
+        <Route element={<LoggedInLayout allowedRoles={['Super Admin']} />}>
+          <Route path="users" element={<UsersListPage />} />
+          <Route path="users/create" element={<AddUserPage />} />
+          <Route path="users/:id/edit" element={<EditUserPage />} />
+          <Route path="departments" element={<DepartmentsListPage />} />
+          <Route path="departments/create" element={<AddDepartmentPage />} />
+          <Route path="departments/:id/edit" element={<EditDepartmentPage />} />
         </Route>
 
         <Route path="login" element={<LoginPage />} />
