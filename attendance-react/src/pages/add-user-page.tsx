@@ -1,5 +1,16 @@
 import { Button } from '@/components/ui/button';
 import {
+  Combobox,
+  ComboboxChip,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxValue,
+} from '@/components/ui/combobox';
+import {
   Field,
   FieldError,
   FieldGroup,
@@ -18,7 +29,7 @@ import { createUser } from '@/services/user-service';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Eye, EyeOff, Loader2Icon } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 import { toast } from 'sonner';
@@ -32,7 +43,8 @@ const formSchema = z.object({
     .min(1, 'Password dibutuhkan')
     .min(8, 'Password harus 8 karakter atau lebih'),
   departmentId: z.number('Department harus dipilih'),
-  role: z.enum(['User', 'Admin'], 'Role harus dipilih'),
+  role: z.enum(['Super Admin', 'Admin', 'User'], 'Role harus dipilih'),
+  allowedDepartmentIds: z.array(z.number()).optional(),
 });
 
 export default function AddUserPage() {
@@ -65,8 +77,11 @@ export default function AddUserPage() {
       password: '',
       departmentId: undefined,
       role: 'User',
+      allowedDepartmentIds: [],
     },
   });
+
+  const role = form.watch('role');
 
   const onSubmit = ({
     username,
@@ -74,6 +89,7 @@ export default function AddUserPage() {
     password,
     departmentId,
     role,
+    allowedDepartmentIds,
   }: z.infer<typeof formSchema>) => {
     mutation.mutate({
       username,
@@ -81,8 +97,15 @@ export default function AddUserPage() {
       password: String(password),
       departmentId,
       role,
+      allowedDepartmentIds,
     });
   };
+
+  useEffect(() => {
+    if (role !== 'Admin') {
+      form.setValue('allowedDepartmentIds', []);
+    }
+  }, [role, form]);
 
   return (
     <form onSubmit={form.handleSubmit(onSubmit)}>
@@ -204,8 +227,9 @@ export default function AddUserPage() {
                 </SelectTrigger>
 
                 <SelectContent>
-                  <SelectItem value="User">User</SelectItem>
+                  <SelectItem value="Super Admin">Super Admin</SelectItem>
                   <SelectItem value="Admin">Admin</SelectItem>
+                  <SelectItem value="User">User</SelectItem>
                 </SelectContent>
               </Select>
 
@@ -213,6 +237,59 @@ export default function AddUserPage() {
             </Field>
           )}
         />
+
+        {role === 'Admin' && (
+          <Controller
+            name="allowedDepartmentIds"
+            control={form.control}
+            render={({ field, fieldState }) => (
+              <Field data-invalid={fieldState.invalid}>
+                <FieldLabel htmlFor={field.name}>
+                  Department yang bisa lihat
+                </FieldLabel>
+
+                <Combobox
+                  items={departments ?? []}
+                  multiple
+                  value={field.value ?? []}
+                  onValueChange={(val) => {
+                    field.onChange(val.map((v: unknown) => Number(v)));
+                  }}
+                >
+                  <ComboboxChips>
+                    <ComboboxValue>
+                      {(field.value ?? []).map((id: number) => {
+                        const dept = departments?.find(
+                          (d: { id: number }) => d.id === id,
+                        );
+                        return (
+                          <ComboboxChip key={id}>
+                            {dept?.name ?? id}
+                          </ComboboxChip>
+                        );
+                      })}
+                    </ComboboxValue>
+                    <ComboboxChipsInput />
+                  </ComboboxChips>
+                  <ComboboxContent>
+                    <ComboboxEmpty>Department tidak ditemukan.</ComboboxEmpty>
+                    <ComboboxList>
+                      {(item: { id: number; name: string }) => (
+                        <ComboboxItem key={item.id} value={String(item.id)}>
+                          {item.name}
+                        </ComboboxItem>
+                      )}
+                    </ComboboxList>
+                  </ComboboxContent>
+                </Combobox>
+
+                {fieldState.invalid && (
+                  <FieldError errors={[fieldState.error]} />
+                )}
+              </Field>
+            )}
+          />
+        )}
 
         <Field orientation="horizontal">
           <Button type="submit" disabled={isSubmitting}>

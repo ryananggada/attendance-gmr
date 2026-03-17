@@ -10,6 +10,7 @@ import {
 } from '../lib/session.js';
 import { session } from '../models/session-model.js';
 import { department } from '../models/department-model.js';
+import { adminScope } from '../models/admin-scope-model.js';
 
 dotenv.config();
 
@@ -22,6 +23,13 @@ export const login = async (req: Request, res: Response) => {
       .from(user)
       .where(and(eq(user.username, username), eq(user.isDeleted, false)))
       .innerJoin(department, eq(department.id, user.departmentId));
+
+    const allowedDepartments = await db
+      .select()
+      .from(adminScope)
+      .where(eq(adminScope.userId, selectedUser!.user.id));
+
+    const allowedDepartmentIds = allowedDepartments.map((d) => d.departmentId);
 
     if (!selectedUser) {
       return res.status(401).json({ message: 'Username atau password salah!' });
@@ -61,6 +69,7 @@ export const login = async (req: Request, res: Response) => {
         fullName: selectedUser!.user.fullName,
         role: selectedUser!.user.role,
         department: selectedUser!.department,
+        allowedDepartmentIds,
       },
       session: curSession,
     });
@@ -98,6 +107,13 @@ export const refresh = async (req: Request, res: Response) => {
     .where(eq(user.id, result.userId))
     .innerJoin(department, eq(department.id, user.departmentId));
 
+  const allowedDepartments = await db
+    .select()
+    .from(adminScope)
+    .where(eq(adminScope.userId, selectedUser!.user.id));
+
+  const allowedDepartmentIds = allowedDepartments.map((d) => d.departmentId);
+
   res.json({
     user: {
       id: selectedUser!.user.id,
@@ -105,6 +121,7 @@ export const refresh = async (req: Request, res: Response) => {
       fullName: selectedUser!.user.fullName,
       role: selectedUser!.user.role,
       department: selectedUser!.department,
+      allowedDepartmentIds,
     },
     session: result,
   });

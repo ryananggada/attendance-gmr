@@ -1,5 +1,16 @@
 import { Button } from '@/components/ui/button';
 import {
+  Combobox,
+  ComboboxChip,
+  ComboboxChips,
+  ComboboxChipsInput,
+  ComboboxContent,
+  ComboboxEmpty,
+  ComboboxItem,
+  ComboboxList,
+  ComboboxValue,
+} from '@/components/ui/combobox';
+import {
   Field,
   FieldError,
   FieldGroup,
@@ -39,8 +50,9 @@ const passwordFormSchema = z.object({
 
 const editUserFormSchema = z.object({
   fullName: z.string().min(1, 'Nama dibutuhkan'),
-  departmentId: z.string().min(1, 'Department harus dipilih'),
-  role: z.enum(['User', 'Admin'], 'Role harus dipilih'),
+  departmentId: z.number('Department harus dipilih'),
+  role: z.enum(['Super Admin', 'Admin', 'User'], 'Role harus dipilih'),
+  allowedDepartmentIds: z.array(z.number()).optional(),
 });
 
 export default function EditUserPage() {
@@ -52,6 +64,7 @@ export default function EditUserPage() {
   const { data: user } = useQuery({
     queryKey: ['user', id],
     queryFn: () => getUserById(Number(id)),
+    staleTime: 0,
   });
   const { data: departments } = useQuery({
     queryKey: ['departments'],
@@ -90,19 +103,24 @@ export default function EditUserPage() {
       fullName: '',
       departmentId: undefined,
       role: 'User',
+      allowedDepartmentIds: [],
     },
   });
+
+  const role = editUserForm.watch('role');
 
   const onEditUserSubmit = ({
     fullName,
     departmentId,
     role,
+    allowedDepartmentIds,
   }: z.infer<typeof editUserFormSchema>) => {
     editUserMutation.mutate({
       id: Number(id),
       fullName,
       departmentId: Number(departmentId),
       role,
+      allowedDepartmentIds,
     });
   };
 
@@ -123,18 +141,21 @@ export default function EditUserPage() {
   };
 
   useEffect(() => {
-    if (user && departments?.length) {
+    if (user) {
       editUserForm.reset({
         fullName: user.fullName,
-        departmentId: String(user.departmentId),
+        departmentId: user.departmentId,
         role: user.role,
+        allowedDepartmentIds: user.allowedDepartmentIds ?? [],
       });
     }
-  }, [user, departments, editUserForm]);
+  }, [user, editUserForm]);
 
-  if (currentUser!.id === Number(id)) {
-    navigate('/users');
-  }
+  useEffect(() => {
+    if (currentUser?.id === Number(id)) {
+      navigate('/users');
+    }
+  }, [currentUser, id, navigate]);
 
   return (
     <div className="flex flex-1 flex-col gap-4">
@@ -169,8 +190,8 @@ export default function EditUserPage() {
                 <Select
                   name={field.name}
                   key={editUserForm.watch('departmentId')}
-                  value={field.value}
-                  onValueChange={field.onChange}
+                  value={field.value ? String(field.value) : ''}
+                  onValueChange={(value) => field.onChange(Number(value))}
                   disabled={!departments}
                 >
                   <SelectTrigger
@@ -209,20 +230,80 @@ export default function EditUserPage() {
                 <Select
                   key={editUserForm.watch('role')}
                   value={field.value}
-                  onValueChange={(value) => field.onChange(value)}
+                  onValueChange={(value) => {
+                    field.onChange(value);
+
+                    if (value !== 'Admin') {
+                      editUserForm.setValue('allowedDepartmentIds', []);
+                    }
+                  }}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select a role" />
                   </SelectTrigger>
 
                   <SelectContent>
-                    <SelectItem value="User">User</SelectItem>
+                    <SelectItem value="Super Admin">Super Admin</SelectItem>
                     <SelectItem value="Admin">Admin</SelectItem>
+                    <SelectItem value="User">User</SelectItem>
                   </SelectContent>
                 </Select>
               </Field>
             )}
           />
+
+          {role === 'Admin' && (
+            <Controller
+              name="allowedDepartmentIds"
+              control={editUserForm.control}
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={field.name}>
+                    Department yang bisa lihat
+                  </FieldLabel>
+
+                  <Combobox
+                    items={departments ?? []}
+                    multiple
+                    value={(field.value ?? []).map(String)}
+                    onValueChange={(val) => {
+                      field.onChange(val.map((v: unknown) => Number(v)));
+                    }}
+                  >
+                    <ComboboxChips>
+                      <ComboboxValue>
+                        {(field.value ?? []).map((id: number) => {
+                          const dept = departments?.find(
+                            (d: { id: number }) => d.id === id,
+                          );
+                          return (
+                            <ComboboxChip key={id}>
+                              {dept?.name ?? id}
+                            </ComboboxChip>
+                          );
+                        })}
+                      </ComboboxValue>
+                      <ComboboxChipsInput />
+                    </ComboboxChips>
+                    <ComboboxContent>
+                      <ComboboxEmpty>Department tidak ditemukan.</ComboboxEmpty>
+                      <ComboboxList>
+                        {(item: { id: number; name: string }) => (
+                          <ComboboxItem key={item.id} value={String(item.id)}>
+                            {item.name}
+                          </ComboboxItem>
+                        )}
+                      </ComboboxList>
+                    </ComboboxContent>
+                  </Combobox>
+
+                  {fieldState.invalid && (
+                    <FieldError errors={[fieldState.error]} />
+                  )}
+                </Field>
+              )}
+            />
+          )}
 
           <Button
             type="submit"

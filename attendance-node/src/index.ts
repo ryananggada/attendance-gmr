@@ -13,6 +13,7 @@ import authRoute from './routes/auth-route.js';
 import departmentRoute from './routes/department-route.js';
 import fieldAttendanceRoute from './routes/field-attendance-route.js';
 import { __dirname } from './utils/path.js';
+import { authMiddleware } from './middlewares/auth.js';
 
 const app = express();
 const PORT = 8000;
@@ -42,6 +43,7 @@ const corsOptions: CorsOptions = {
 app.use(cors(corsOptions));
 */
 app.use(cookieParser());
+app.use(authMiddleware);
 
 app.get('/api', (_req, res) => {
   res.send('Hello from Typescript Express!');

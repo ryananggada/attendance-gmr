@@ -1,4 +1,4 @@
-import { and, eq, getTableColumns, sql } from 'drizzle-orm';
+import { and, eq, getTableColumns, inArray, sql } from 'drizzle-orm';
 import type { Request, Response } from 'express';
 import { db } from '../configs/db.js';
 import { attendance } from '../models/attendance-model.js';
@@ -221,6 +221,11 @@ export const getSingleAttendance = async (req: Request, res: Response) => {
 
 export const getAttendances = async (req: Request, res: Response) => {
   const { day, month } = req.query;
+  const authUser = req.user;
+
+  if (!authUser) {
+    return res.status(401).json({ message: 'Unauthorized.' });
+  }
 
   if ((day && month) || (!day && !month)) {
     return res
@@ -228,7 +233,7 @@ export const getAttendances = async (req: Request, res: Response) => {
       .json({ message: 'Format harus ?day=YYYY-MM-DD OR ?month=YYYY-MM' });
   }
 
-  let rows;
+  const conditions = [];
 
   if (day) {
     if (typeof day !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(day)) {
@@ -237,22 +242,7 @@ export const getAttendances = async (req: Request, res: Response) => {
         .json({ message: 'Format hari tidak valid (YYYY-MM-DD)' });
     }
 
-    rows = await db
-      .select({
-        attendance: attendanceColumns,
-        user: userWithoutPassword,
-        checkEvent: checkEventColumns,
-        leave: leaveColumns,
-        earlyLeave: earlyLeaveColumns,
-        late: lateColumns,
-      })
-      .from(attendance)
-      .where(eq(attendance.date, day))
-      .innerJoin(user, eq(user.id, attendance.userId))
-      .leftJoin(checkEvent, eq(checkEvent.attendanceId, attendance.id))
-      .leftJoin(leave, eq(leave.attendanceId, attendance.id))
-      .leftJoin(earlyLeave, eq(earlyLeave.attendanceId, attendance.id))
-      .leftJoin(late, eq(late.attendanceId, attendance.id));
+    conditions.push(eq(attendance.date, day));
   }
 
   if (month) {
@@ -264,26 +254,38 @@ export const getAttendances = async (req: Request, res: Response) => {
 
     const [year, mon] = month.split('-').map(Number);
 
-    rows = await db
-      .select({
-        attendance: attendanceColumns,
-        user: userWithoutPassword,
-        checkEvent: checkEventColumns,
-        leave: leaveColumns,
-        earlyLeave: earlyLeaveColumns,
-        late: lateColumns,
-      })
-      .from(attendance)
-      .where(
-        sql`EXTRACT(month FROM ${attendance.date}) = ${mon}
-        AND EXTRACT(year FROM ${attendance.date}) = ${year}`,
-      )
-      .innerJoin(user, eq(user.id, attendance.userId))
-      .leftJoin(checkEvent, eq(checkEvent.attendanceId, attendance.id))
-      .leftJoin(leave, eq(leave.attendanceId, attendance.id))
-      .leftJoin(earlyLeave, eq(earlyLeave.attendanceId, attendance.id))
-      .leftJoin(late, eq(late.attendanceId, attendance.id));
+    conditions.push(
+      sql`EXTRACT(month FROM ${attendance.date}) = ${mon}
+          AND EXTRACT(year FROM ${attendance.date}) = ${year}`,
+    );
   }
+
+  if (authUser.role === 'Admin') {
+    const allowedIds = authUser.allowedDepartmentIds ?? [];
+
+    if (allowedIds.length > 0) {
+      conditions.push(inArray(user.departmentId, allowedIds));
+    } else {
+      return res.json([]);
+    }
+  }
+
+  const rows = await db
+    .select({
+      attendance: attendanceColumns,
+      user: userWithoutPassword,
+      checkEvent: checkEventColumns,
+      leave: leaveColumns,
+      earlyLeave: earlyLeaveColumns,
+      late: lateColumns,
+    })
+    .from(attendance)
+    .innerJoin(user, eq(user.id, attendance.userId))
+    .leftJoin(checkEvent, eq(checkEvent.attendanceId, attendance.id))
+    .leftJoin(leave, eq(leave.attendanceId, attendance.id))
+    .leftJoin(earlyLeave, eq(earlyLeave.attendanceId, attendance.id))
+    .leftJoin(late, eq(late.attendanceId, attendance.id))
+    .where(and(...conditions));
 
   if (!rows || rows.length === 0) {
     return res.json([]);

@@ -6,8 +6,9 @@ type AuthContextType = {
     id: number;
     username: string;
     fullName: string;
-    role: 'User' | 'Admin';
+    role: 'Super Admin' | 'Admin' | 'User';
     department: { id: number; name: string; isField: boolean };
+    allowedDepartmentIds?: [number];
   } | null;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
@@ -21,8 +22,9 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     id: number;
     username: string;
     fullName: string;
-    role: 'User' | 'Admin';
+    role: 'Super Admin' | 'Admin' | 'User';
     department: { id: number; name: string; isField: boolean };
+    allowedDepartmentIds?: [number];
   } | null>(null);
   const [loading, setLoading] = useState(true);
 

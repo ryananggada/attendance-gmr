@@ -32,9 +32,6 @@ export const requireSession = async (
       return res.status(401).json({ message: 'Sesi kedaluarsa' });
     }
 
-    req.session = result;
-    // req.userId = result.userId;
-
     next();
   } catch (error) {
     return res.status(500).json({ message: 'Verifikasi sesi gagal' });

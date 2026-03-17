@@ -10,8 +10,9 @@ import { attendance } from './attendance-model.js';
 import { session } from './session-model.js';
 import { department } from './department-model.js';
 import { fieldAttendance } from './field-attendance-model.js';
+import { adminScope } from './admin-scope-model.js';
 
-export const roleEnum = pgEnum('role', ['Admin', 'User']);
+export const roleEnum = pgEnum('role', ['Super Admin', 'Admin', 'User']);
 
 export const user = pgTable('user', {
   id: integer().primaryKey().generatedAlwaysAsIdentity(),
@@ -28,4 +29,5 @@ export const userRelations = relations(user, ({ one, many }) => ({
   session: many(session),
   department: one(department),
   fieldAttendance: many(fieldAttendance),
+  adminScope: many(adminScope),
 }));

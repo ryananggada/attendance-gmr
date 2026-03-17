@@ -35,7 +35,9 @@ export default function App() {
           />
         </Route>
 
-        <Route element={<LoggedInLayout allowedRoles={['Admin']} />}>
+        <Route
+          element={<LoggedInLayout allowedRoles={['Super Admin', 'Admin']} />}
+        >
           <Route path="users" element={<UsersListPage />} />
           <Route path="users/create" element={<AddUserPage />} />
           <Route path="users/:id/edit" element={<EditUserPage />} />

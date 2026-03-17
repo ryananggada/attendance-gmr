@@ -4,12 +4,14 @@ export const createUser = async ({
   password,
   departmentId,
   role,
+  allowedDepartmentIds,
 }: {
   fullName: string;
   username: string;
   password: string;
   departmentId: number;
-  role: 'User' | 'Admin';
+  role: 'Super Admin' | 'Admin' | 'User';
+  allowedDepartmentIds?: number[];
 }) => {
   const response = await fetch(`${import.meta.env.VITE_NODE_URL}/users`, {
     method: 'POST',
@@ -23,6 +25,7 @@ export const createUser = async ({
       password,
       departmentId,
       role,
+      allowedDepartmentIds,
     }),
   });
 
@@ -63,11 +66,13 @@ export const updateUser = async ({
   fullName,
   departmentId,
   role,
+  allowedDepartmentIds,
 }: {
   id: number;
   fullName: string;
   departmentId: number;
-  role: 'Admin' | 'User';
+  role: 'Super Admin' | 'Admin' | 'User';
+  allowedDepartmentIds?: number[];
 }) => {
   const response = await fetch(`${import.meta.env.VITE_NODE_URL}/users/${id}`, {
     method: 'PATCH',
@@ -75,7 +80,12 @@ export const updateUser = async ({
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ fullName, departmentId, role }),
+    body: JSON.stringify({
+      fullName,
+      departmentId,
+      role,
+      allowedDepartmentIds,
+    }),
   });
 
   if (!response.ok) {
