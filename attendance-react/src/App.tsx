@@ -24,10 +24,22 @@ export default function App() {
       <Routes>
         <Route element={<LoggedInLayout />}>
           <Route index element={<HomePage />} />
+        </Route>
+
+        <Route
+          element={<LoggedInLayout allowedRoles={['Super Admin', 'User']} />}
+        >
           <Route path="attendance" element={<AttendancePage />} />
         </Route>
 
-        <Route element={<LoggedInLayout isFieldOnly />}>
+        <Route
+          element={
+            <LoggedInLayout
+              isFieldOnly
+              allowedRoles={['Super Admin', 'User']}
+            />
+          }
+        >
           <Route path="field-attendance" element={<FieldAttendancePage />} />
           <Route
             path="field-attendance/create"
