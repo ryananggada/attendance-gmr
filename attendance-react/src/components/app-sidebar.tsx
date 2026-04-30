@@ -68,7 +68,7 @@ const data = {
       title: 'Settings',
       url: '/settings',
       icon: SettingsIcon,
-      roles: ['Super Admin', 'Admin'],
+      roles: ['Super Admin'],
     },
   ],
 };

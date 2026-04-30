@@ -59,8 +59,6 @@ export default function App() {
             path="field-attendance-summary"
             element={<FieldAttendanceSummaryPage />}
           />
-
-          <Route path="/settings" element={<SettingsPage />} />
         </Route>
 
         <Route element={<LoggedInLayout allowedRoles={['Super Admin']} />}>
@@ -70,6 +68,7 @@ export default function App() {
           <Route path="departments" element={<DepartmentsListPage />} />
           <Route path="departments/create" element={<AddDepartmentPage />} />
           <Route path="departments/:id/edit" element={<EditDepartmentPage />} />
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
 
         <Route path="login" element={<LoginPage />} />
