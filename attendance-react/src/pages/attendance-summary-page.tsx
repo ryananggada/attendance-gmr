@@ -56,7 +56,12 @@ type AttendanceRow = {
   name: string;
   departmentId: number;
   date: string;
-  events: any;
+  events: {
+    CheckIn?: EventDetail;
+    FieldCheckIn?: EventDetail;
+    FieldCheckOut?: EventDetail;
+    CheckOut?: EventDetail;
+  };
   late?: { remarks: string };
   absent?: {
     date: string;

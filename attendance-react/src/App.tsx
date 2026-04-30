@@ -17,6 +17,7 @@ import LoggedInLayout from './layouts/logged-in-layout';
 import NotFoundPage from './pages/not-found-page';
 import AttendanceSummaryPage from './pages/attendance-summary-page';
 import FieldAttendanceSummaryPage from './pages/field-attendance-summary-page';
+import SettingsPage from './pages/settings-page';
 
 export default function App() {
   return (
@@ -58,6 +59,8 @@ export default function App() {
             path="field-attendance-summary"
             element={<FieldAttendanceSummaryPage />}
           />
+
+          <Route path="/settings" element={<SettingsPage />} />
         </Route>
 
         <Route element={<LoggedInLayout allowedRoles={['Super Admin']} />}>

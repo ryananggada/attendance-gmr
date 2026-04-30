@@ -12,6 +12,7 @@ import attendanceRoute from './routes/attendance-route.js';
 import authRoute from './routes/auth-route.js';
 import departmentRoute from './routes/department-route.js';
 import fieldAttendanceRoute from './routes/field-attendance-route.js';
+import settingRoute from './routes/setting-route.js';
 import { __dirname } from './utils/path.js';
 import { authMiddleware } from './middlewares/auth.js';
 
@@ -42,6 +43,7 @@ const corsOptions: CorsOptions = {
 
 app.use(cors(corsOptions));
 */
+
 app.use(cookieParser());
 app.use(authMiddleware);
 
@@ -54,6 +56,7 @@ app.use('/api/users', userRoute);
 app.use('/api/attendances', attendanceRoute);
 app.use('/api/departments', departmentRoute);
 app.use('/api/field-attendances', fieldAttendanceRoute);
+app.use('/api/settings', settingRoute);
 
 app.use('/images', express.static(path.join(__dirname, '../uploads')));
 
